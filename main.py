@@ -25,8 +25,8 @@ TERMO_BUSCA = "energetico monster"
 # Ajuste se um banner de cookies/modal bloquear a grade (inspecione o botão no site).
 POPUP_CLOSE_SELECTOR = None  # ex.: 'button:has-text("Aceitar")'
 
-# Threshold provisório X (BRL): nome com "Monster" e preço <= X disparam o alerta.
-PRICE_THRESHOLD_ULTRA = 8.50
+# Limiar de alerta (BRL): Telegram só quando o preço **mudou** e é <= este valor.
+MONSTER_ALERT_MAX_PRICE = 8.50
 
 # User-Agent de navegador real — o WAF do ML bloqueia o UA padrão do requests/aiohttp.
 _API_UA = (
@@ -164,8 +164,61 @@ def _build_alert_message(produto: str, preco: float, site_id: str) -> str:
         f"Site: {site_id}\n"
         f"Produto: {produto}\n"
         f"*Preço encontrado:* R$ {preco:.2f}\n"
-        f"_Monster · limiar ≤ R$ {PRICE_THRESHOLD_ULTRA:.2f}_"
+        f"_Monster · limiar ≤ R$ {MONSTER_ALERT_MAX_PRICE:.2f}_"
     )
+
+
+async def _registrar_preco_monster(
+    historico: dict[str, float],
+    *,
+    site_id: str,
+    nome: str,
+    preco: float,
+    telegram_token: str,
+    telegram_chat_id: str,
+) -> None:
+    """Espelha o preço do site no histórico; alerta só se mudou e está no limiar.
+
+    * **Histórico** — todo item com ``monster`` no nome e preço válido na listagem
+      é gravado em ``historico_precos.json`` com o valor atual do site, acima ou
+      abaixo do limiar.
+    * **Telegram** — só quando o preço **mudou** em relação ao histórico e
+      ``preço <= MONSTER_ALERT_MAX_PRICE``.
+    """
+    chave = _historico_chave(site_id, nome)
+    preco_atual = _normalize_preco(preco)
+    preco_anterior = historico.get(chave)
+    preco_mudou = (
+        preco_anterior is None
+        or _normalize_preco(preco_anterior) != preco_atual
+    )
+
+    historico[chave] = preco_atual
+
+    if not preco_mudou:
+        return
+
+    if preco_atual > MONSTER_ALERT_MAX_PRICE:
+        logging.info(
+            "Preço alterado no histórico (acima do limiar, sem alerta) — "
+            "site=%r produto=%r preço=%.2f",
+            site_id,
+            nome,
+            preco_atual,
+        )
+        return
+
+    if telegram_token and telegram_chat_id:
+        mensagem = _build_alert_message(nome, preco_atual, site_id)
+        await send_telegram_alert(telegram_token, telegram_chat_id, mensagem)
+    else:
+        logging.warning(
+            "Preço no limiar sem alerta enviado (Telegram não configurado) — "
+            "site=%r produto=%r preço=%.2f",
+            site_id,
+            nome,
+            preco_atual,
+        )
 
 
 def _parse_mercado_livre_search_payload(data: Any) -> list[dict[str, Any]]:
@@ -215,7 +268,7 @@ async def fetch_search_results_api(url: str) -> list[dict[str, Any]]:
 
 
 async def main(historico: dict, arquivo_historico: str) -> None:
-    """Varre cada site em ``SITES_CONFIG``, aplica filtros e persiste o histórico."""
+    """Varre cada site em ``SITES_CONFIG`` e persiste preços Monster no histórico."""
     telegram_token, telegram_chat_id = load_telegram_credentials()
 
     precisa_browser = any(cfg["tipo"] == "html" for cfg in SITES_CONFIG.values())
@@ -288,41 +341,14 @@ async def main(historico: dict, arquivo_historico: str) -> None:
                 if not _produto_elegivel(nome):
                     continue
 
-                chave = _historico_chave(site_id, nome)
-                preco_atual = _normalize_preco(preco)
-                preco_salvo = historico.get(chave)
-                preco_mudou = (
-                    preco_salvo is None
-                    or _normalize_preco(preco_salvo) != preco_atual
+                await _registrar_preco_monster(
+                    historico,
+                    site_id=site_id,
+                    nome=nome,
+                    preco=preco,
+                    telegram_token=telegram_token,
+                    telegram_chat_id=telegram_chat_id,
                 )
-                if not preco_mudou:
-                    continue
-
-                historico[chave] = preco_atual
-
-                if preco_atual > PRICE_THRESHOLD_ULTRA:
-                    logging.info(
-                        "Preço atualizado no histórico (acima do limiar, sem alerta) — "
-                        "site=%r produto=%r preço=%.2f",
-                        site_id,
-                        nome,
-                        preco_atual,
-                    )
-                    continue
-
-                if telegram_token and telegram_chat_id:
-                    mensagem = _build_alert_message(nome, preco_atual, site_id)
-                    await send_telegram_alert(
-                        telegram_token, telegram_chat_id, mensagem
-                    )
-                else:
-                    logging.warning(
-                        "Preço no limiar sem alerta enviado (Telegram não configurado) — "
-                        "site=%r produto=%r preço=%.2f",
-                        site_id,
-                        nome,
-                        preco_atual,
-                    )
 
         save_history(arquivo_historico, historico)
     finally:
