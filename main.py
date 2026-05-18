@@ -25,7 +25,7 @@ TERMO_BUSCA = "energetico monster"
 # Ajuste se um banner de cookies/modal bloquear a grade (inspecione o botão no site).
 POPUP_CLOSE_SELECTOR = None  # ex.: 'button:has-text("Aceitar")'
 
-# Threshold provisório X (BRL): nome com "Ultra" e preço <= X disparam o alerta.
+# Threshold provisório X (BRL): nome com "Monster" e preço <= X disparam o alerta.
 PRICE_THRESHOLD_ULTRA = 8.50
 
 # User-Agent de navegador real — o WAF do ML bloqueia o UA padrão do requests/aiohttp.
@@ -152,6 +152,11 @@ def _html_url_query_placeholder(site_id: str, termo: str) -> str:
     return termo.replace(" ", "%20")
 
 
+def _produto_elegivel(nome: str) -> bool:
+    """True se o nome do produto contém ``monster`` (sem diferenciar maiúsculas)."""
+    return "monster" in nome.lower()
+
+
 def _build_alert_message(produto: str, preco: float, site_id: str) -> str:
     """Monta o texto do alerta em Markdown, incluindo o identificador do site."""
     return (
@@ -159,7 +164,7 @@ def _build_alert_message(produto: str, preco: float, site_id: str) -> str:
         f"Site: {site_id}\n"
         f"Produto: {produto}\n"
         f"*Preço encontrado:* R$ {preco:.2f}\n"
-        f"_Monster Ultra · limiar ≤ R$ {PRICE_THRESHOLD_ULTRA:.2f}_"
+        f"_Monster · limiar ≤ R$ {PRICE_THRESHOLD_ULTRA:.2f}_"
     )
 
 
@@ -280,7 +285,7 @@ async def main(historico: dict, arquivo_historico: str) -> None:
                 preco = item.get("preco")
                 if nome is None or preco is None:
                     continue
-                if "ultra" not in nome.lower() or preco > PRICE_THRESHOLD_ULTRA:
+                if not _produto_elegivel(nome):
                     continue
 
                 chave = _historico_chave(site_id, nome)
@@ -293,6 +298,18 @@ async def main(historico: dict, arquivo_historico: str) -> None:
                 if not preco_mudou:
                     continue
 
+                historico[chave] = preco_atual
+
+                if preco_atual > PRICE_THRESHOLD_ULTRA:
+                    logging.info(
+                        "Preço atualizado no histórico (acima do limiar, sem alerta) — "
+                        "site=%r produto=%r preço=%.2f",
+                        site_id,
+                        nome,
+                        preco_atual,
+                    )
+                    continue
+
                 if telegram_token and telegram_chat_id:
                     mensagem = _build_alert_message(nome, preco_atual, site_id)
                     await send_telegram_alert(
@@ -300,13 +317,12 @@ async def main(historico: dict, arquivo_historico: str) -> None:
                     )
                 else:
                     logging.warning(
-                        "Preço elegível sem alerta enviado (Telegram não configurado) — "
+                        "Preço no limiar sem alerta enviado (Telegram não configurado) — "
                         "site=%r produto=%r preço=%.2f",
                         site_id,
                         nome,
                         preco_atual,
                     )
-                historico[chave] = preco_atual
 
         save_history(arquivo_historico, historico)
     finally:
