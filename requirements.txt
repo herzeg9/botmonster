@@ -1,4 +1,5 @@
 beautifulsoup4>=4.12
 playwright>=1.40
 aiohttp>=3.9
+requests>=2.31
 python-dotenv>=1.0
