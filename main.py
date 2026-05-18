@@ -75,24 +75,70 @@ def load_telegram_credentials() -> tuple[str, str]:
     return _read_telegram_from_environ()
 
 
-def load_history(filepath: str) -> dict:
-    """Carrega o histórico de preços de um JSON ou retorna dicionário vazio."""
-    try:
-        with open(filepath, encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {}
-
-
-def save_history(filepath: str, data: dict) -> None:
-    """Persiste o histórico atualizado em disco com indentação legível."""
-    with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
+def _normalize_preco(val: Any) -> float:
+    """Arredonda para 2 casas — evita falso positivo em comparação float."""
+    return round(float(val), 2)
 
 
 def _historico_chave(site_id: str, nome_produto: str) -> str:
     """Chave única por site + nome de produto (evita colisão multi-sites)."""
-    return f"{site_id}::{nome_produto}"
+    return f"{site_id}::{nome_produto.strip()}"
+
+
+def normalize_history(historico: Any) -> dict[str, float]:
+    """Valida chaves ``site_id::produto``, migra formato legado e normaliza preços."""
+    if not isinstance(historico, dict):
+        logging.warning("historico_precos.json inválido; iniciando vazio.")
+        return {}
+
+    valid_sites = set(SITES_CONFIG)
+    out: dict[str, float] = {}
+
+    for chave, valor in historico.items():
+        if not isinstance(chave, str):
+            continue
+
+        if "::" not in chave:
+            chave = _historico_chave("pao_de_acucar", chave)
+            logging.info("Migrando chave legada do histórico para %r", chave)
+
+        site_id, sep, nome = chave.partition("::")
+        if not sep or not site_id or not nome.strip():
+            logging.warning("Chave de histórico ignorada: %r", chave)
+            continue
+
+        if site_id not in valid_sites:
+            logging.warning(
+                "Site %r não está em SITES_CONFIG; entrada ignorada: %r",
+                site_id,
+                chave,
+            )
+            continue
+
+        try:
+            out[_historico_chave(site_id, nome)] = _normalize_preco(valor)
+        except (TypeError, ValueError):
+            logging.warning("Preço inválido no histórico para %r: %r", chave, valor)
+
+    return out
+
+
+def load_history(filepath: str) -> dict[str, float]:
+    """Carrega o histórico de preços de um JSON ou retorna dicionário vazio."""
+    try:
+        with open(filepath, encoding="utf-8") as f:
+            raw = json.load(f)
+    except FileNotFoundError:
+        return {}
+    return normalize_history(raw)
+
+
+def save_history(filepath: str, data: dict) -> None:
+    """Persiste o histórico normalizado, ordenado por chave."""
+    ordenado = dict(sorted(normalize_history(data).items(), key=lambda item: item[0]))
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(ordenado, f, indent=4, ensure_ascii=False)
+        f.write("\n")
 
 
 def _html_url_query_placeholder(site_id: str, termo: str) -> str:
@@ -238,18 +284,29 @@ async def main(historico: dict, arquivo_historico: str) -> None:
                     continue
 
                 chave = _historico_chave(site_id, nome)
+                preco_atual = _normalize_preco(preco)
                 preco_salvo = historico.get(chave)
-                if chave not in historico or preco_salvo != preco:
-                    mensagem = _build_alert_message(nome, preco, site_id)
-                    if not telegram_token or not telegram_chat_id:
-                        logging.warning(
-                            "Gatilho acionado mas TELEGRAM_TOKEN (ou TELEGRAM_BOT_TOKEN) ou "
-                            "TELEGRAM_CHAT_ID não estão definidos — configure o ambiente ou o "
-                            "arquivo .env (veja .env.example)."
-                        )
-                        continue
-                    await send_telegram_alert(telegram_token, telegram_chat_id, mensagem)
-                    historico[chave] = preco
+                preco_mudou = (
+                    preco_salvo is None
+                    or _normalize_preco(preco_salvo) != preco_atual
+                )
+                if not preco_mudou:
+                    continue
+
+                if telegram_token and telegram_chat_id:
+                    mensagem = _build_alert_message(nome, preco_atual, site_id)
+                    await send_telegram_alert(
+                        telegram_token, telegram_chat_id, mensagem
+                    )
+                else:
+                    logging.warning(
+                        "Preço elegível sem alerta enviado (Telegram não configurado) — "
+                        "site=%r produto=%r preço=%.2f",
+                        site_id,
+                        nome,
+                        preco_atual,
+                    )
+                historico[chave] = preco_atual
 
         save_history(arquivo_historico, historico)
     finally:
