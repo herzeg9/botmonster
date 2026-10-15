@@ -14,6 +14,7 @@ import requests
 from dotenv import load_dotenv
 
 from config_sites import SITES_CONFIG
+from scraper_shopee import fetch_shopee_packs
 from scraper_supermercado import SupermarketScraper
 from telegram_notifier import send_telegram_alert
 
@@ -21,6 +22,9 @@ _ENV_PATH = Path(__file__).resolve().parent / ".env"
 
 # Termo passado ao placeholder ``{query}`` em ``url_busca``.
 TERMO_BUSCA = "energetico monster"
+
+# Shopee: foco em packs de 6 latas (preço comparado por lata).
+TERMO_BUSCA_SHOPEE = "monster energy pack 6 latas"
 
 # Ajuste se um banner de cookies/modal bloquear a grade (inspecione o botão no site).
 POPUP_CLOSE_SELECTOR = None  # ex.: 'button:has-text("Aceitar")'
@@ -157,8 +161,26 @@ def _produto_elegivel(nome: str) -> bool:
     return "monster" in nome.lower()
 
 
-def _build_alert_message(produto: str, preco: float, site_id: str) -> str:
+def _build_alert_message(
+    produto: str, preco: float, site_id: str, extra: Optional[dict[str, Any]] = None
+) -> str:
     """Monta o texto do alerta em Markdown, incluindo o identificador do site."""
+    if extra and "preco_pack" in extra:
+        frete = extra.get("frete")
+        frete_txt = (
+            "grátis" if frete == 0 else
+            (f"R$ {frete:.2f}" if frete is not None else "desconhecido")
+        )
+        return (
+            "⚠️ ALERTA DE PREÇO BAÍXO ⚠️\n\n"
+            f"Site: {site_id}\n"
+            f"Produto: {extra.get('titulo', produto)}\n"
+            f"Pack {extra.get('qtd')} latas: R$ {extra['preco_pack']:.2f}\n"
+            f"Frete: {frete_txt} ({extra.get('frete_obs', '')})\n"
+            f"*Preço por lata:* R$ {preco:.2f}\n"
+            f"{extra.get('link', '')}\n"
+            f"_Monster · limiar ≤ R$ {MONSTER_ALERT_MAX_PRICE:.2f}/lata_"
+        )
     return (
         "⚠️ ALERTA DE PREÇO BAÍXO ⚠️\n\n"
         f"Site: {site_id}\n"
@@ -176,6 +198,7 @@ async def _registrar_preco_monster(
     preco: float,
     telegram_token: str,
     telegram_chat_id: str,
+    extra: Optional[dict[str, Any]] = None,
 ) -> None:
     """Espelha o preço do site no histórico; alerta só se mudou e está no limiar.
 
@@ -209,7 +232,7 @@ async def _registrar_preco_monster(
         return
 
     if telegram_token and telegram_chat_id:
-        mensagem = _build_alert_message(nome, preco_atual, site_id)
+        mensagem = _build_alert_message(nome, preco_atual, site_id, extra)
         await send_telegram_alert(telegram_token, telegram_chat_id, mensagem)
     else:
         logging.warning(
@@ -319,6 +342,16 @@ async def main(historico: dict, arquivo_historico: str) -> None:
                     )
                     continue
 
+            elif config["tipo"] == "shopee":
+                url_alvo = config["url_busca"].format(
+                    query=urllib.parse.quote(TERMO_BUSCA_SHOPEE, safe=""),
+                )
+                try:
+                    itens = await asyncio.to_thread(fetch_shopee_packs, TERMO_BUSCA_SHOPEE)
+                except Exception:
+                    logging.exception("Falha ao consultar Shopee — site=%r", site_id)
+                    continue
+
             else:
                 logging.warning("Tipo de estratégia desconhecido: %r", config.get("tipo"))
                 continue
@@ -348,6 +381,7 @@ async def main(historico: dict, arquivo_historico: str) -> None:
                     preco=preco,
                     telegram_token=telegram_token,
                     telegram_chat_id=telegram_chat_id,
+                    extra=item if "preco_pack" in item else None,
                 )
 
         save_history(arquivo_historico, historico)

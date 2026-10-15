@@ -6,6 +6,8 @@ e **com** extrair os dados:
 * ``tipo == "html"`` — listagem web; preenche os seletores CSS para o Playwright/DOM.
 * ``tipo == "api"`` — endpoint REST; seletores ficam vazios; a orquestração deve
   usar um cliente HTTP e mapear o JSON no ``main``.
+* ``tipo == "shopee"`` — API oficial de afiliados da Shopee (:mod:`scraper_shopee`):
+  packs de 6 latas, preço por lata; ``url_busca`` é só referência.
 
 Para um novo canal, adicione uma chave com o mesmo contrato de
 :class:`SiteListingStrategy`.
@@ -16,7 +18,7 @@ from __future__ import annotations
 from typing import Literal, TypedDict
 
 
-SiteTipo = Literal["html", "api"]
+SiteTipo = Literal["html", "api", "shopee"]
 
 
 class SiteListingStrategy(TypedDict):
@@ -61,5 +63,12 @@ SITES_CONFIG: dict[str, SiteListingStrategy] = {
         "card_selector": ".vtex-search-result-3-x-galleryItem",
         "name_selector": "span.vtex-product-summary-2-x-productBrand",
         "price_selector": ".vtex-productShowCasePrice",
+    },
+    "shopee": {
+        "tipo": "shopee",
+        "url_busca": "https://shopee.com.br/search?keyword={query}",
+        "card_selector": "",
+        "name_selector": "",
+        "price_selector": "",
     },
 }
