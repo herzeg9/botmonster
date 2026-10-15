@@ -8,6 +8,7 @@ estratégia retorna lista vazia (não derruba o monitor).
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 from typing import Any, Optional
@@ -155,6 +156,7 @@ async def fetch_amazon_packs(browser: Any, url: str) -> list[dict[str, Any]]:
         "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"
     )
     page = await context.new_page()
+    page.set_default_timeout(20_000)
     try:
         resp = await page.goto(url, wait_until="domcontentloaded", timeout=60_000)
         status = resp.status if resp else None
@@ -173,4 +175,7 @@ async def fetch_amazon_packs(browser: Any, url: str) -> list[dict[str, Any]]:
             return []
         return parse_search_html(html)
     finally:
-        await context.close()
+        try:
+            await asyncio.wait_for(context.close(), 15)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Amazon: falha/timeout ao fechar contexto: %r", exc)

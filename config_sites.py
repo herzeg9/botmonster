@@ -8,6 +8,8 @@ e **com** extrair os dados:
   usar um cliente HTTP e mapear o JSON no ``main``.
 * ``tipo == "amazon"`` — estratégia dedicada (:mod:`scraper_amazon`): packs de 6
   latas, preço por lata (+ frete quando visível); seletores ficam vazios.
+* ``tipo == "shopee"`` — API oficial de afiliados da Shopee (:mod:`scraper_shopee`):
+  packs de 6 latas, preço por lata; ``url_busca`` é só referência.
 
 Para um novo canal, adicione uma chave com o mesmo contrato de
 :class:`SiteListingStrategy`.
@@ -18,7 +20,7 @@ from __future__ import annotations
 from typing import Literal, TypedDict
 
 
-SiteTipo = Literal["html", "api", "amazon"]
+SiteTipo = Literal["html", "api", "amazon", "shopee"]
 
 
 class SiteListingStrategy(TypedDict):
@@ -68,6 +70,13 @@ SITES_CONFIG: dict[str, SiteListingStrategy] = {
         "tipo": "amazon",
         # Termo próprio (packs de 6); ``{query}`` recebe TERMO_BUSCA_AMAZON.
         "url_busca": "https://www.amazon.com.br/s?k={query}",
+        "card_selector": "",
+        "name_selector": "",
+        "price_selector": "",
+    },
+    "shopee": {
+        "tipo": "shopee",
+        "url_busca": "https://shopee.com.br/search?keyword={query}",
         "card_selector": "",
         "name_selector": "",
         "price_selector": "",

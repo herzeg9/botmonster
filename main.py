@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 
 from config_sites import SITES_CONFIG
 from scraper_amazon import fetch_amazon_packs
+from scraper_shopee import fetch_shopee_packs
 from scraper_supermercado import SupermarketScraper
 from telegram_notifier import send_telegram_alert
 
@@ -26,6 +27,8 @@ TERMO_BUSCA = "energetico monster"
 
 # Amazon: foco em packs de 6 latas (preço comparado por lata).
 TERMO_BUSCA_AMAZON = "monster energy pack 6 latas 473ml"
+# Shopee: foco em packs de 6 latas (preço comparado por lata).
+TERMO_BUSCA_SHOPEE = "monster energy pack 6 latas"
 
 # Ajuste se um banner de cookies/modal bloquear a grade (inspecione o botão no site).
 POPUP_CLOSE_SELECTOR = None  # ex.: 'button:has-text("Aceitar")'
@@ -175,13 +178,18 @@ def _build_alert_message(
             "grátis" if frete == 0 else
             (f"R$ {frete:.2f}" if frete is not None else "desconhecido")
         )
+        prime_txt = (
+            f"Prime: {'sim' if extra.get('prime') else 'não'}\n"
+            if site_id == "amazon"
+            else ""
+        )
         return (
             "⚠️ ALERTA DE PREÇO BAÍXO ⚠️\n\n"
             f"Site: {site_id}\n"
             f"Produto: {extra.get('titulo', produto)}\n"
             f"Pack {extra.get('qtd')} latas: R$ {extra['preco_pack']:.2f}\n"
             f"Frete: {frete_txt} ({extra.get('frete_obs', '')})\n"
-            f"Prime: {'sim' if extra.get('prime') else 'não'}\n"
+            f"{prime_txt}"
             f"*Preço por lata:* R$ {preco:.2f}\n"
             f"{extra.get('link', '')}\n"
             f"_Monster · limiar ≤ R$ {MONSTER_ALERT_MAX_PRICE:.2f}/lata_"
@@ -311,11 +319,11 @@ async def main(historico: dict, arquivo_historico: str) -> None:
             await scraper.start()
 
         for site_id, config in SITES_CONFIG.items():
+            t0 = time.monotonic()
             if config["tipo"] == "html":
                 url_alvo = config["url_busca"].format(
                     query=_html_url_query_placeholder(site_id, TERMO_BUSCA),
                 )
-                t0 = time.monotonic()
                 try:
                     assert scraper is not None
                     itens = await asyncio.wait_for(scraper.extract_search_results(
@@ -364,21 +372,41 @@ async def main(historico: dict, arquivo_historico: str) -> None:
                 )
                 try:
                     assert scraper is not None and scraper._browser is not None
-                    itens = await fetch_amazon_packs(scraper._browser, url_alvo)
+                    itens = await asyncio.wait_for(
+                        fetch_amazon_packs(scraper._browser, url_alvo), SITE_TIMEOUT_S
+                    )
+                except asyncio.TimeoutError:
+                    logging.error("Timeout rígido de %ss — site=%r pulado", SITE_TIMEOUT_S, site_id)
+                    continue
                 except Exception:
                     logging.exception(
                         "Falha ao extrair Amazon — site=%r url=%r", site_id, url_alvo
                     )
                     continue
 
+            elif config["tipo"] == "shopee":
+                url_alvo = config["url_busca"].format(
+                    query=urllib.parse.quote(TERMO_BUSCA_SHOPEE, safe=""),
+                )
+                try:
+                    itens = await asyncio.wait_for(
+                        asyncio.to_thread(fetch_shopee_packs, TERMO_BUSCA_SHOPEE),
+                        SITE_TIMEOUT_S,
+                    )
+                except asyncio.TimeoutError:
+                    logging.error("Timeout rígido de %ss — site=%r pulado", SITE_TIMEOUT_S, site_id)
+                    continue
+                except Exception:
+                    logging.exception("Falha ao consultar Shopee — site=%r", site_id)
+                    continue
+
             else:
                 logging.warning("Tipo de estratégia desconhecido: %r", config.get("tipo"))
                 continue
 
-            if config["tipo"] == "html":
-                logging.info(
-                    "site=%r: %d itens em %.1fs", site_id, len(itens), time.monotonic() - t0
-                )
+            logging.info(
+                "site=%r: %d itens em %.1fs", site_id, len(itens), time.monotonic() - t0
+            )
             print({"site": site_id, "url": url_alvo, "itens": itens})
 
             if not itens:
