@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 import os
+import time
 import urllib.parse
 from pathlib import Path
 from typing import Any, Optional
@@ -24,6 +25,9 @@ TERMO_BUSCA = "energetico monster"
 
 # Ajuste se um banner de cookies/modal bloquear a grade (inspecione o botão no site).
 POPUP_CLOSE_SELECTOR = None  # ex.: 'button:has-text("Aceitar")'
+
+# Tempo máximo (s) por site: um site lento/travado nunca segura a execução toda.
+SITE_TIMEOUT_S = 180
 
 # Limiar de alerta (BRL): Telegram só quando o preço **mudou** e é <= este valor.
 MONSTER_ALERT_MAX_PRICE = 8.50
@@ -285,9 +289,10 @@ async def main(historico: dict, arquivo_historico: str) -> None:
                 url_alvo = config["url_busca"].format(
                     query=_html_url_query_placeholder(site_id, TERMO_BUSCA),
                 )
+                t0 = time.monotonic()
                 try:
                     assert scraper is not None
-                    itens = await scraper.extract_search_results(
+                    itens = await asyncio.wait_for(scraper.extract_search_results(
                         url_alvo,
                         config["card_selector"],
                         config["name_selector"],
@@ -295,8 +300,16 @@ async def main(historico: dict, arquivo_historico: str) -> None:
                         popup_close_selector=POPUP_CLOSE_SELECTOR,
                         navigation_wait="load",
                         post_load_wait_ms=3000,
-                        card_wait_timeout_ms=90_000,
+                        card_wait_timeout_ms=60_000,
+                    ), SITE_TIMEOUT_S)
+                except asyncio.TimeoutError:
+                    logging.error(
+                        "Timeout rígido de %ss — site=%r pulado (url=%r)",
+                        SITE_TIMEOUT_S,
+                        site_id,
+                        url_alvo,
                     )
+                    continue
                 except Exception:
                     logging.exception(
                         "Falha ao extrair listagem HTML — site=%r url=%r",
@@ -323,6 +336,10 @@ async def main(historico: dict, arquivo_historico: str) -> None:
                 logging.warning("Tipo de estratégia desconhecido: %r", config.get("tipo"))
                 continue
 
+            if config["tipo"] == "html":
+                logging.info(
+                    "site=%r: %d itens em %.1fs", site_id, len(itens), time.monotonic() - t0
+                )
             print({"site": site_id, "url": url_alvo, "itens": itens})
 
             if not itens:
