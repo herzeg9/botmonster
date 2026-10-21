@@ -496,12 +496,15 @@ class SupermarketScraper:
 
         context = await self._browser.new_context(**self._context_options())
         page = await context.new_page()
+        # Timeout padrão para TODA operação de página/elemento (evaluate,
+        # get_attribute, inner_text…) — antes eram ilimitadas e podiam travar.
+        page.set_default_timeout(20_000)
         results: list[dict[str, Any]] = []
         seen_hrefs: set[str] = set()
 
         try:
             try:
-                await page.goto(url, wait_until=navigation_wait, timeout=120_000)
+                await page.goto(url, wait_until=navigation_wait, timeout=60_000)
             except PlaywrightTimeoutError as exc:
                 print(f"[SupermarketScraper] Timeout ao carregar a URL: {url!r}: {exc}")
                 raise
@@ -518,6 +521,14 @@ class SupermarketScraper:
                     timeout=card_wait_timeout_ms,
                 )
             except PlaywrightTimeoutError:
+                # Diagnóstico: onde a página parou (redirect, captcha, vitrine vazia).
+                try:
+                    titulo = await asyncio.wait_for(page.title(), 5)
+                except Exception:
+                    titulo = "?"
+                logger.error(
+                    "Sem cards — url final=%r título=%r", page.url, titulo
+                )
                 logger.error(
                     "Nenhum card encontrado com o seletor após %sms — possíveis causas: "
                     "classes CSS mudaram (hash), página ainda não renderizou (SPA), "
@@ -573,8 +584,12 @@ class SupermarketScraper:
                 results.append({"produto": nome, "preco": preco_float})
 
         finally:
-            await page.close()
-            await context.close()
+            # close() também pode travar se o renderer congelar: limite rígido.
+            for closer in (page.close, context.close):
+                try:
+                    await asyncio.wait_for(closer(), 15)
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning("Falha/timeout ao fechar página/contexto: %r", exc)
 
         return results
 
