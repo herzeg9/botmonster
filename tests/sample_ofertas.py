@@ -207,9 +207,16 @@ class OfertasFeedTest(unittest.TestCase):
         self.assertEqual(lata["sabor"], "Original")
         self.assertIsInstance(lata["preco_lata"], float)
 
-        for oid, pontos in feed["historico"].items():
-            self.assertEqual(len(pontos), 1, oid)
-            self.assertEqual(pontos[0]["visto_em"], QUANDO)
+        self.assertIsInstance(feed["historico"], list)
+        self.assertEqual(len(feed["historico"]), len(feed["ofertas"]))
+        for ponto in feed["historico"]:
+            self.assertEqual(
+                list(ponto),
+                ["loja", "sabor", "nome", "pack_qtd", "preco_lata", "visto_em"],
+            )
+            self.assertEqual(ponto["visto_em"], QUANDO)
+            self.assertIsInstance(ponto["preco_lata"], float)
+            self.assertIsInstance(ponto["pack_qtd"], int)
 
     def test_historico_compacto_so_quando_o_preco_muda(self) -> None:
         item = {
@@ -228,8 +235,15 @@ class OfertasFeedTest(unittest.TestCase):
             sites_ok={"tauste"},
             generated_at=DEPOIS,
         )
-        oid = "tauste::Energético Monster Lata 473ml"
-        self.assertEqual(len(segundo["historico"][oid]), 1)
+        nome = "Energético Monster Lata 473ml"
+
+        def pontos_tauste(feed: dict) -> list[dict]:
+            return [p for p in feed["historico"] if p["loja"] == "tauste" and p["nome"] == nome]
+
+        self.assertIsInstance(segundo["historico"], list)
+        self.assertEqual(len(pontos_tauste(segundo)), 1)
+        self.assertEqual(pontos_tauste(segundo)[0]["sabor"], "Original")
+        self.assertEqual(pontos_tauste(segundo)[0]["pack_qtd"], 1)
         self.assertEqual(segundo["ofertas"][0]["visto_em"], DEPOIS)
         self.assertEqual(segundo["ofertas"][0]["preco_lata_anterior"], 8.49)
 
@@ -240,7 +254,7 @@ class OfertasFeedTest(unittest.TestCase):
             sites_ok={"tauste"},
             generated_at="2026-11-12T00:00:00Z",
         )
-        pontos = terceiro["historico"][oid]
+        pontos = pontos_tauste(terceiro)
         self.assertEqual([p["preco_lata"] for p in pontos], [8.49, 7.99])
         self.assertEqual(validar_ofertas(terceiro), [])
 
@@ -263,10 +277,63 @@ class OfertasFeedTest(unittest.TestCase):
             sites_ok={"tauste"},
             generated_at=DEPOIS,
         )
-        pontos = feed["historico"]["tauste::Energético Monster Lata 473ml"]
-        self.assertEqual(len(pontos), HISTORICO_MAX_PONTOS)
-        self.assertEqual(pontos[-1]["preco_lata"], 4.2)
+        self.assertIsInstance(feed["historico"], list)
+        self.assertEqual(len(feed["historico"]), HISTORICO_MAX_PONTOS)
+        self.assertEqual(feed["historico"][-1]["preco_lata"], 4.2)
+        self.assertEqual(feed["historico"][-1]["loja"], "tauste")
+        self.assertEqual(feed["historico"][-1]["nome"], "Energético Monster Lata 473ml")
+        self.assertEqual(feed["historico"][-1]["sabor"], "Original")
+        self.assertEqual(feed["historico"][-1]["pack_qtd"], 1)
         self.assertEqual(validar_ofertas(feed), [])
+
+    def test_objeto_antigo_e_lista_nova_sao_aceitos(self) -> None:
+        nome = "Energético Monster Lata 473ml"
+        legado = {
+            "schema_version": 1,
+            "generated_at": QUANDO,
+            "ofertas": [
+                {
+                    "id": f"tauste::{nome}",
+                    "loja": "tauste",
+                    "nome": nome,
+                    "sabor": "Original",
+                    "pack_qtd": 1,
+                    "preco_pack": 9.0,
+                    "preco_lata": 9.0,
+                    "preco_lata_anterior": None,
+                    "frete": None,
+                    "cupom": None,
+                    "link": None,
+                    "imagem": None,
+                    "visto_em": QUANDO,
+                }
+            ],
+            "historico": {
+                f"tauste::{nome}": [
+                    {"visto_em": QUANDO, "preco_lata": 9.0},
+                ]
+            },
+        }
+        item = {"produto": nome, "preco": 8.0}
+        feed = build_ofertas(
+            [observacao_from_item("tauste", item, preco_anterior=9.0)],
+            previous=legado,
+            sites_ok={"tauste"},
+            generated_at=DEPOIS,
+        )
+        self.assertEqual(
+            [(p["preco_lata"], p["visto_em"]) for p in feed["historico"]],
+            [(9.0, QUANDO), (8.0, DEPOIS)],
+        )
+        self.assertEqual(feed["historico"][0]["sabor"], "Original")
+        de_novo = build_ofertas(
+            [observacao_from_item("tauste", item, preco_anterior=8.0)],
+            previous=feed,
+            sites_ok={"tauste"},
+            generated_at="2026-11-12T02:00:00Z",
+        )
+        self.assertEqual([p["preco_lata"] for p in de_novo["historico"]], [9.0, 8.0])
+        self.assertEqual(validar_ofertas(de_novo), [])
 
     def test_loja_que_falhou_mantem_a_oferta_anterior(self) -> None:
         anterior = feed_de_exemplo()
@@ -287,6 +354,9 @@ class OfertasFeedTest(unittest.TestCase):
         self.assertIn("shopee", lojas)
         pao = next(o for o in feed["ofertas"] if o["loja"] == "pao_de_acucar")
         self.assertEqual(pao["visto_em"], QUANDO)
+        pontos_pao = [p for p in feed["historico"] if p["loja"] == "pao_de_acucar"]
+        self.assertTrue(pontos_pao)
+        self.assertTrue(all(p["visto_em"] == QUANDO for p in pontos_pao))
         self.assertEqual(validar_ofertas(feed), [])
 
     def test_produto_sumiu_da_loja_que_respondeu(self) -> None:
@@ -321,7 +391,8 @@ class OfertasFeedTest(unittest.TestCase):
         )
         ids = [o["id"] for o in feed["ofertas"]]
         self.assertEqual(ids, ["tauste::Energético Monster Ultra Lata 473ml"])
-        self.assertIn("tauste::Energético Monster Lata 473ml", feed["historico"])
+        nomes = {p["nome"] for p in feed["historico"]}
+        self.assertIn("Energético Monster Lata 473ml", nomes)
 
     def test_roundtrip_em_arquivo(self) -> None:
         import tempfile
@@ -403,7 +474,7 @@ def main() -> int:
         ensure_ascii=False,
         indent=2,
     ))
-    print(f"válido: {len(feed['ofertas'])} ofertas, {len(feed['historico'])} séries")
+    print(f"válido: {len(feed['ofertas'])} ofertas, {len(feed['historico'])} pontos")
     return 0
 
 

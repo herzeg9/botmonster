@@ -13,9 +13,11 @@ Oferta
     ``null`` = desconhecido), ``cupom``, ``link``, ``imagem``, ``visto_em``.
     Preços são números em reais.
 
-``historico`` mapeia o ``id`` da oferta para uma lista compacta de
-``{"visto_em", "preco_lata"}``. Só entra ponto novo quando o preço por lata
-muda, limitado aos ``HISTORICO_MAX_PONTOS`` mais recentes.
+``historico`` é uma lista plana de pontos
+``{loja, sabor, nome, pack_qtd, preco_lata, visto_em}`` — o mesmo formato
+que o app decodifica como ``List``. Só entra ponto novo quando o preço por
+lata da oferta muda, limitado aos ``HISTORICO_MAX_PONTOS`` mais recentes.
+Na leitura, o objeto antigo (id → pontos) também é aceito e convertido.
 """
 
 from __future__ import annotations
@@ -244,18 +246,119 @@ def observacao_from_item(
     }
 
 
-def _pontos(raw: Any) -> list[dict[str, Any]]:
-    if not isinstance(raw, list):
-        return []
+def _pack_inteiro(valor: Any, nome: str) -> Optional[int]:
+    if isinstance(valor, bool):
+        return None
+    try:
+        qtd = int(valor)
+    except (TypeError, ValueError):
+        qtd = parse_pack_qtd(nome) or 0
+    if qtd < 1:
+        return None
+    return qtd
+
+
+def _ponto_historico(
+    loja: str,
+    sabor: str,
+    nome: str,
+    pack_qtd: int,
+    preco_lata: float,
+    visto_em: str,
+) -> dict[str, Any]:
+    return {
+        "loja": loja,
+        "sabor": sabor,
+        "nome": nome,
+        "pack_qtd": pack_qtd,
+        "preco_lata": preco_lata,
+        "visto_em": visto_em,
+    }
+
+
+def _meta_legado(oid: str, ofertas_por_id: dict[str, dict[str, Any]]) -> Optional[tuple[str, str, str, int]]:
+    """Loja, nome, sabor e pack de uma chave antiga ``loja::produto``."""
+    oferta = ofertas_por_id.get(oid)
+    if isinstance(oferta, dict):
+        loja = oferta.get("loja")
+        nome = oferta.get("nome")
+        if loja in LOJAS and isinstance(nome, str) and nome.strip():
+            sabor = oferta.get("sabor")
+            if not isinstance(sabor, str) or not sabor.strip():
+                sabor = derivar_sabor(nome)
+            pack = _pack_inteiro(oferta.get("pack_qtd"), nome)
+            if pack is not None:
+                return (str(loja), nome.strip(), sabor, pack)
+    loja, sep, nome = str(oid).partition("::")
+    nome = nome.strip()
+    if not sep or loja not in LOJAS or not nome:
+        return None
+    return (loja, nome, derivar_sabor(nome), parse_pack_qtd(nome) or 1)
+
+
+def _series_de_historico(
+    bruto: Any,
+    ofertas_por_id: dict[str, dict[str, Any]],
+) -> dict[tuple[str, str, str, int], list[dict[str, Any]]]:
+    """Agrupa o histórico anterior por oferta.
+
+    Aceita a lista do contrato e o objeto legado ``{id: [{visto_em, preco_lata}]}``.
+    """
+    soltos: list[dict[str, Any]] = []
+    if isinstance(bruto, dict):
+        for oid, pontos in bruto.items():
+            if not isinstance(oid, str) or not isinstance(pontos, list):
+                continue
+            meta = _meta_legado(oid, ofertas_por_id)
+            if meta is None:
+                continue
+            loja, nome, sabor, pack = meta
+            for ponto in pontos:
+                if not isinstance(ponto, dict) or not _iso_ok(ponto.get("visto_em")):
+                    continue
+                preco = _numero(ponto.get("preco_lata"))
+                if preco is None:
+                    continue
+                soltos.append(_ponto_historico(loja, sabor, nome, pack, preco, str(ponto["visto_em"])))
+    elif isinstance(bruto, list):
+        for ponto in bruto:
+            if not isinstance(ponto, dict) or not _iso_ok(ponto.get("visto_em")):
+                continue
+            loja = ponto.get("loja")
+            nome = ponto.get("nome")
+            sabor = ponto.get("sabor")
+            if loja not in LOJAS or not isinstance(nome, str) or not nome.strip():
+                continue
+            if not isinstance(sabor, str) or not sabor.strip():
+                sabor = derivar_sabor(nome)
+            pack = _pack_inteiro(ponto.get("pack_qtd"), nome)
+            preco = _numero(ponto.get("preco_lata"))
+            if pack is None or preco is None:
+                continue
+            soltos.append(
+                _ponto_historico(str(loja), sabor, nome.strip(), pack, preco, str(ponto["visto_em"]))
+            )
+
+    series: dict[tuple[str, str, str, int], list[dict[str, Any]]] = {}
+    soltos.sort(key=lambda p: (p["loja"], p["nome"], p["sabor"], p["pack_qtd"], p["visto_em"]))
+    for ponto in soltos:
+        chave = (ponto["loja"], ponto["nome"], ponto["sabor"], ponto["pack_qtd"])
+        serie = series.setdefault(chave, [])
+        if serie and serie[-1]["preco_lata"] == ponto["preco_lata"]:
+            continue
+        serie.append(ponto)
+    for chave, serie in series.items():
+        series[chave] = serie[-HISTORICO_MAX_PONTOS:]
+    return series
+
+
+def _lista_historico(
+    series: dict[tuple[str, str, str, int], list[dict[str, Any]]],
+) -> list[dict[str, Any]]:
     pontos: list[dict[str, Any]] = []
-    for ponto in raw:
-        if not isinstance(ponto, dict) or not _iso_ok(ponto.get("visto_em")):
-            continue
-        preco = _numero(ponto.get("preco_lata"))
-        if preco is None:
-            continue
-        pontos.append({"visto_em": str(ponto["visto_em"]), "preco_lata": preco})
-    return pontos[-HISTORICO_MAX_PONTOS:]
+    for chave in sorted(series):
+        pontos.extend(series[chave])
+    return pontos
 
 
 def _oferta_observada(obs: dict[str, Any], visto_em: str) -> dict[str, Any]:
@@ -333,28 +436,39 @@ def build_ofertas(
         key=lambda o: (str(o.get("loja")), str(o.get("nome")), str(o.get("id"))),
     )
 
-    historico: dict[str, list[dict[str, Any]]] = {}
-    bruto_hist = previous.get("historico") if isinstance(previous, dict) else None
-    if isinstance(bruto_hist, dict):
-        for oid, pontos in bruto_hist.items():
-            if not isinstance(oid, str):
-                continue
-            norm = _pontos(pontos)
-            if norm:
-                historico[oid] = norm
-
-    for oid, oferta in atuais.items():
-        pontos = list(historico.get(oid, []))
-        preco = oferta["preco_lata"]
-        if not pontos or pontos[-1]["preco_lata"] != preco:
-            pontos.append({"visto_em": generated_at, "preco_lata": preco})
-        historico[oid] = pontos[-HISTORICO_MAX_PONTOS:]
+    series = _series_de_historico(
+        previous.get("historico") if isinstance(previous, dict) else None,
+        anteriores,
+    )
+    for oferta in atuais.values():
+        pack = _pack_inteiro(oferta.get("pack_qtd"), str(oferta.get("nome") or ""))
+        nome = oferta.get("nome")
+        sabor = oferta.get("sabor")
+        loja = oferta.get("loja")
+        preco = _numero(oferta.get("preco_lata"))
+        if (
+            pack is None
+            or preco is None
+            or loja not in LOJAS
+            or not isinstance(nome, str)
+            or not nome.strip()
+            or not isinstance(sabor, str)
+            or not sabor.strip()
+        ):
+            continue
+        chave = (str(loja), nome.strip(), sabor, pack)
+        serie = list(series.get(chave, []))
+        if not serie or serie[-1]["preco_lata"] != preco:
+            serie.append(
+                _ponto_historico(str(loja), sabor, nome.strip(), pack, preco, generated_at)
+            )
+        series[chave] = serie[-HISTORICO_MAX_PONTOS:]
 
     return {
         "schema_version": SCHEMA_VERSION,
         "generated_at": generated_at,
         "ofertas": ofertas,
-        "historico": {oid: historico[oid] for oid in sorted(historico)},
+        "historico": _lista_historico(series),
     }
 
 
@@ -426,25 +540,44 @@ def validar_ofertas(feed: Any) -> list[str]:
         if not _iso_ok(oferta.get("visto_em")):
             erros.append(f"{prefixo}.visto_em inválido")
 
-    historico = feed.get("historico", {})
-    if historico is None:
-        historico = {}
-    if not isinstance(historico, dict):
-        erros.append("historico não é objeto")
+    historico = feed.get("historico")
+    if not isinstance(historico, list):
+        erros.append("historico não é lista")
         return erros
-    for oid, pontos in historico.items():
-        if not isinstance(oid, str) or not oid.strip():
-            erros.append("historico com id inválido")
+    por_oferta: dict[tuple[str, str, str, int], int] = {}
+    for i, ponto in enumerate(historico):
+        prefixo = f"historico[{i}]"
+        if not isinstance(ponto, dict):
+            erros.append(f"{prefixo} não é objeto")
             continue
-        if not isinstance(pontos, list):
-            erros.append(f"historico[{oid}] não é lista")
-            continue
-        if len(pontos) > HISTORICO_MAX_PONTOS:
-            erros.append(f"historico[{oid}] excede {HISTORICO_MAX_PONTOS} pontos")
-        for j, ponto in enumerate(pontos):
-            if not isinstance(ponto, dict):
-                erros.append(f"historico[{oid}][{j}] inválido")
-                continue
-            if not _iso_ok(ponto.get("visto_em")) or not _eh_numero(ponto.get("preco_lata")):
-                erros.append(f"historico[{oid}][{j}] mal formado")
+        for chave in ("loja", "sabor", "nome", "pack_qtd", "preco_lata", "visto_em"):
+            if chave not in ponto:
+                erros.append(f"{prefixo} sem {chave}")
+        if ponto.get("loja") not in LOJAS:
+            erros.append(f"{prefixo}.loja inválida")
+        if not isinstance(ponto.get("nome"), str) or not str(ponto.get("nome")).strip():
+            erros.append(f"{prefixo}.nome inválido")
+        if not isinstance(ponto.get("sabor"), str) or not str(ponto.get("sabor")).strip():
+            erros.append(f"{prefixo}.sabor inválido")
+        qtd = ponto.get("pack_qtd")
+        if isinstance(qtd, bool) or not isinstance(qtd, int) or qtd < 1:
+            erros.append(f"{prefixo}.pack_qtd inválido")
+        else:
+            chave_oferta = (
+                str(ponto.get("loja")),
+                str(ponto.get("nome")),
+                str(ponto.get("sabor")),
+                qtd,
+            )
+            por_oferta[chave_oferta] = por_oferta.get(chave_oferta, 0) + 1
+        if not _eh_numero(ponto.get("preco_lata")):
+            erros.append(f"{prefixo}.preco_lata não é número")
+        if not _iso_ok(ponto.get("visto_em")):
+            erros.append(f"{prefixo}.visto_em inválido")
+    for chave_oferta, quantidade in por_oferta.items():
+        if quantidade > HISTORICO_MAX_PONTOS:
+            erros.append(
+                f"historico de {chave_oferta[0]} / {chave_oferta[1]!r} "
+                f"excede {HISTORICO_MAX_PONTOS} pontos"
+            )
     return erros

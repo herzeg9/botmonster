@@ -505,7 +505,7 @@ async def main(
             )
             save_ofertas(arquivo_ofertas, feed)
             logging.info(
-                "ofertas.json: %d ofertas, %d séries de histórico",
+                "ofertas.json: %d ofertas, %d pontos de histórico",
                 len(feed["ofertas"]),
                 len(feed["historico"]),
             )
