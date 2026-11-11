@@ -27,7 +27,11 @@ from ofertas_feed import (  # noqa: E402
 )
 from scraper_amazon import parse_search_html  # noqa: E402
 from scraper_shopee import parse_nodes  # noqa: E402
-from scraper_supermercado import SupermarketScraper, absolute_http_url  # noqa: E402
+from scraper_supermercado import (  # noqa: E402
+    SupermarketScraper,
+    absolute_http_url,
+    escolher_imagem_card,
+)
 
 QUANDO = "2026-11-11T18:00:00Z"
 DEPOIS = "2026-11-11T20:00:00Z"
@@ -209,14 +213,16 @@ class OfertasFeedTest(unittest.TestCase):
 
         self.assertIsInstance(feed["historico"], list)
         self.assertEqual(len(feed["historico"]), len(feed["ofertas"]))
+        ids_oferta = {o["id"] for o in feed["ofertas"]}
         for ponto in feed["historico"]:
             self.assertEqual(
                 list(ponto),
-                ["loja", "sabor", "nome", "pack_qtd", "preco_lata", "visto_em"],
+                ["loja", "sabor", "nome", "pack_qtd", "preco_lata", "visto_em", "id"],
             )
             self.assertEqual(ponto["visto_em"], QUANDO)
             self.assertIsInstance(ponto["preco_lata"], float)
             self.assertIsInstance(ponto["pack_qtd"], int)
+            self.assertIn(ponto["id"], ids_oferta)
 
     def test_historico_compacto_so_quando_o_preco_muda(self) -> None:
         item = {
@@ -437,6 +443,493 @@ class OfertasFeedTest(unittest.TestCase):
         )
         self.assertIsNone(absolute_http_url(base, "data:image/gif;base64,aaaa"))
         self.assertIsNone(absolute_http_url(base, "https://cdn.exemplo/placeholder.png"))
+
+    def test_imagem_do_card_prefere_data_src_ao_placeholder_magento(self) -> None:
+        base = "https://tauste.com.br/campinas1/catalogsearch/result/?q=monster"
+        placeholder = (
+            "https://tauste.com.br/static/version1/frontend/Tauste/default/"
+            "pt_BR/Magento_Catalog/images/product/placeholder/small_image.jpg"
+        )
+        foto = "https://tauste.com.br/media/catalog/product/m/o/monster-ultra.jpg"
+        self.assertEqual(
+            escolher_imagem_card(
+                base,
+                {"src": placeholder, "currentSrc": placeholder, "data-src": foto},
+            ),
+            foto,
+        )
+        # data-src ganha mesmo quando src já é uma foto de verdade.
+        self.assertEqual(
+            escolher_imagem_card(
+                base,
+                {
+                    "src": "https://cdn.exemplo/baixa.jpg",
+                    "currentSrc": "https://cdn.exemplo/baixa.jpg",
+                    "data-src": foto,
+                },
+            ),
+            foto,
+        )
+
+    def test_imagem_do_card_pula_placeholder_e_cai_no_proximo(self) -> None:
+        base = "https://tauste.com.br/campinas1/"
+        self.assertEqual(
+            escolher_imagem_card(
+                base,
+                {
+                    "data-src": "data:image/gif;base64,aaaa",
+                    "data-original": "/media/catalog/product/real.jpg",
+                    "src": "https://tauste.com.br/static/placeholder/default.jpg",
+                },
+            ),
+            "https://tauste.com.br/media/catalog/product/real.jpg",
+        )
+        self.assertEqual(
+            escolher_imagem_card(
+                "https://www.samsclub.com.br/monster",
+                {
+                    "src": "https://cdn.exemplo/placeholder.png",
+                    "data-srcset": (
+                        "https://cdn.exemplo/spinner.gif 320w, "
+                        "https://cdn.exemplo/monster.jpg 640w"
+                    ),
+                },
+            ),
+            "https://cdn.exemplo/monster.jpg",
+        )
+        self.assertEqual(
+            escolher_imagem_card(
+                "https://tauste.com.br/",
+                {
+                    "src": "https://tauste.com.br/placeholder/x.jpg",
+                    "sources": [
+                        {"data-srcset": "https://tauste.com.br/media/via-source.jpg 1x"}
+                    ],
+                },
+            ),
+            "https://tauste.com.br/media/via-source.jpg",
+        )
+        self.assertIsNone(
+            escolher_imagem_card(
+                base,
+                {
+                    "data-src": "https://cdn.exemplo/placeholder.png",
+                    "src": "https://cdn.exemplo/blank.gif",
+                    "currentSrc": "https://cdn.exemplo/pixel.gif",
+                },
+            )
+        )
+
+    def test_imagem_do_card_src_real_quando_nao_ha_lazy(self) -> None:
+        base = "https://www.paodeacucar.com/busca?w=monster"
+        self.assertEqual(
+            escolher_imagem_card(base, {"src": "/files/monster.png"}),
+            "https://www.paodeacucar.com/files/monster.png",
+        )
+
+    def _obs_amazon(self, titulo: str, asin: str, preco: float):
+        return observacao_from_item(
+            "amazon",
+            {
+                "produto": f"{titulo} [{asin}]",
+                "titulo": titulo,
+                "qtd": 6,
+                "preco_pack": round(preco * 6, 2),
+                "preco_lata": preco,
+                "preco": preco,
+                "frete": 0.0,
+            },
+            preco_anterior=preco,
+        )
+
+    def test_historico_nao_oscila_entre_anuncios_com_o_mesmo_titulo(self) -> None:
+        titulo = "Monster Energy Ultra Pack 6 latas 473ml"
+        primeiro = build_ofertas(
+            [self._obs_amazon(titulo, "B0AAA", 8.0), self._obs_amazon(titulo, "B0BBB", 10.0)],
+            previous=None,
+            sites_ok={"amazon"},
+            generated_at=QUANDO,
+        )
+
+        def serie(feed: dict, asin: str) -> list[float]:
+            oid = f"amazon::{titulo} [{asin}]"
+            return [p["preco_lata"] for p in feed["historico"] if p.get("id") == oid]
+
+        self.assertEqual(serie(primeiro, "B0AAA"), [8.0])
+        self.assertEqual(serie(primeiro, "B0BBB"), [10.0])
+        self.assertEqual(len(primeiro["historico"]), 2)
+        for ponto in primeiro["historico"]:
+            for chave in ("loja", "sabor", "nome", "pack_qtd", "preco_lata", "visto_em"):
+                self.assertIn(chave, ponto)
+
+        segundo = build_ofertas(
+            [self._obs_amazon(titulo, "B0AAA", 8.0), self._obs_amazon(titulo, "B0BBB", 10.0)],
+            previous=primeiro,
+            sites_ok={"amazon"},
+            generated_at=DEPOIS,
+        )
+        self.assertEqual(serie(segundo, "B0AAA"), [8.0])
+        self.assertEqual(serie(segundo, "B0BBB"), [10.0])
+        self.assertEqual(len(segundo["historico"]), 2)
+
+        terceiro = build_ofertas(
+            [self._obs_amazon(titulo, "B0AAA", 7.5), self._obs_amazon(titulo, "B0BBB", 10.0)],
+            previous=segundo,
+            sites_ok={"amazon"},
+            generated_at="2026-11-12T00:00:00Z",
+        )
+        self.assertEqual(serie(terceiro, "B0AAA"), [8.0, 7.5])
+        self.assertEqual(serie(terceiro, "B0BBB"), [10.0])
+        self.assertEqual(validar_ofertas(terceiro), [])
+
+    def test_historico_lista_sem_id_continua_na_mesma_oferta(self) -> None:
+        nome = "Energético Monster Lata 473ml"
+        oid = f"tauste::{nome}"
+        anterior = {
+            "schema_version": 1,
+            "generated_at": QUANDO,
+            "ofertas": [
+                {
+                    "id": oid,
+                    "loja": "tauste",
+                    "nome": nome,
+                    "sabor": "Original",
+                    "pack_qtd": 1,
+                    "preco_pack": 9.0,
+                    "preco_lata": 9.0,
+                    "preco_lata_anterior": None,
+                    "frete": None,
+                    "cupom": None,
+                    "link": None,
+                    "imagem": None,
+                    "visto_em": QUANDO,
+                }
+            ],
+            "historico": [
+                {
+                    "loja": "tauste",
+                    "sabor": "Original",
+                    "nome": nome,
+                    "pack_qtd": 1,
+                    "preco_lata": 9.0,
+                    "visto_em": QUANDO,
+                }
+            ],
+        }
+        feed = build_ofertas(
+            [observacao_from_item("tauste", {"produto": nome, "preco": 8.0}, preco_anterior=9.0)],
+            previous=anterior,
+            sites_ok={"tauste"},
+            generated_at=DEPOIS,
+        )
+        self.assertEqual([p["preco_lata"] for p in feed["historico"]], [9.0, 8.0])
+        self.assertTrue(all(p["id"] == oid for p in feed["historico"]))
+        self.assertEqual(validar_ofertas(feed), [])
+
+    def test_historico_antigo_ambiguo_nao_volta_a_oscilar(self) -> None:
+        titulo = "Monster Energy Ultra Pack 6 latas 473ml"
+
+        def oferta(asin: str, preco: float) -> dict:
+            return {
+                "id": f"amazon::{titulo} [{asin}]",
+                "loja": "amazon",
+                "nome": titulo,
+                "sabor": "Ultra",
+                "pack_qtd": 6,
+                "preco_pack": preco * 6,
+                "preco_lata": preco,
+                "preco_lata_anterior": None,
+                "frete": 0.0,
+                "cupom": None,
+                "link": None,
+                "imagem": None,
+                "visto_em": QUANDO,
+            }
+
+        anterior = {
+            "schema_version": 1,
+            "generated_at": QUANDO,
+            "ofertas": [oferta("B0AAA", 8.0), oferta("B0BBB", 10.0)],
+            "historico": [
+                {
+                    "loja": "amazon",
+                    "sabor": "Ultra",
+                    "nome": titulo,
+                    "pack_qtd": 6,
+                    "preco_lata": 8.0,
+                    "visto_em": "2026-11-11T16:00:00Z",
+                },
+                {
+                    "loja": "amazon",
+                    "sabor": "Ultra",
+                    "nome": titulo,
+                    "pack_qtd": 6,
+                    "preco_lata": 10.0,
+                    "visto_em": QUANDO,
+                },
+            ],
+        }
+        feed = build_ofertas(
+            [self._obs_amazon(titulo, "B0AAA", 8.0), self._obs_amazon(titulo, "B0BBB", 10.0)],
+            previous=anterior,
+            sites_ok={"amazon"},
+            generated_at=DEPOIS,
+        )
+        por_id: dict[str, list[float]] = {}
+        for ponto in feed["historico"]:
+            por_id.setdefault(ponto["id"], []).append(ponto["preco_lata"])
+        self.assertEqual(por_id[f"amazon::{titulo} [B0AAA]"], [8.0])
+        self.assertEqual(por_id[f"amazon::{titulo} [B0BBB]"], [10.0])
+        legadas = [
+            chave
+            for chave in por_id
+            if chave not in (f"amazon::{titulo} [B0AAA]", f"amazon::{titulo} [B0BBB]")
+        ]
+        self.assertEqual(legadas, [f"amazon::{titulo}||Ultra||6"])
+        self.assertEqual(por_id[legadas[0]], [8.0, 10.0])
+
+        de_novo = build_ofertas(
+            [self._obs_amazon(titulo, "B0AAA", 8.0), self._obs_amazon(titulo, "B0BBB", 10.0)],
+            previous=feed,
+            sites_ok={"amazon"},
+            generated_at="2026-11-12T00:00:00Z",
+        )
+        self.assertEqual(len(de_novo["historico"]), len(feed["historico"]))
+        # O anúncio que continua não herda a série fundida.
+        so_um = build_ofertas(
+            [self._obs_amazon(titulo, "B0AAA", 8.0)],
+            previous=de_novo,
+            sites_ok={"amazon"},
+            generated_at="2026-11-12T04:00:00Z",
+        )
+        por_id = {}
+        for ponto in so_um["historico"]:
+            por_id.setdefault(ponto["id"], []).append(ponto["preco_lata"])
+        self.assertEqual(por_id[f"amazon::{titulo} [B0AAA]"], [8.0])
+        self.assertEqual(por_id[legadas[0]], [8.0, 10.0])
+        self.assertEqual(validar_ofertas(so_um), [])
+
+    def test_lista_sem_id_reencaixa_quando_a_oferta_volta(self) -> None:
+        nome = "Energético Monster Lata 473ml"
+        anterior = {
+            "schema_version": 1,
+            "generated_at": QUANDO,
+            "ofertas": [],
+            "historico": [
+                {
+                    "loja": "tauste",
+                    "sabor": "Original",
+                    "nome": nome,
+                    "pack_qtd": 1,
+                    "preco_lata": 9.0,
+                    "visto_em": QUANDO,
+                }
+            ],
+        }
+        feed = build_ofertas(
+            [observacao_from_item("tauste", {"produto": nome, "preco": 9.0}, preco_anterior=9.0)],
+            previous=anterior,
+            sites_ok={"tauste"},
+            generated_at=DEPOIS,
+        )
+        self.assertEqual([p["preco_lata"] for p in feed["historico"]], [9.0])
+        self.assertEqual(feed["historico"][0]["id"], f"tauste::{nome}")
+        self.assertEqual(feed["historico"][0]["visto_em"], QUANDO)
+
+    def test_historico_amazon_sem_id_reencaixa_no_asin_desta_rodada(self) -> None:
+        titulo = "Monster Energy Ultra Pack 6 latas 473ml"
+        oid = f"amazon::{titulo} [B0AAA]"
+        anterior = {
+            "schema_version": 1,
+            "generated_at": QUANDO,
+            "ofertas": [],
+            "historico": [
+                {
+                    "loja": "amazon",
+                    "sabor": "Ultra",
+                    "nome": titulo,
+                    "pack_qtd": 6,
+                    "preco_lata": 8.0,
+                    "visto_em": QUANDO,
+                }
+            ],
+        }
+        feed = build_ofertas(
+            [self._obs_amazon(titulo, "B0AAA", 8.0)],
+            previous=anterior,
+            sites_ok={"amazon"},
+            generated_at=DEPOIS,
+        )
+        self.assertEqual([p["id"] for p in feed["historico"]], [oid])
+        self.assertEqual([p["preco_lata"] for p in feed["historico"]], [8.0])
+        self.assertNotIn(f"amazon::{titulo}", {p["id"] for p in feed["historico"]})
+
+        de_novo = build_ofertas(
+            [self._obs_amazon(titulo, "B0AAA", 8.0)],
+            previous=feed,
+            sites_ok={"amazon"},
+            generated_at="2026-11-12T00:00:00Z",
+        )
+        self.assertEqual([p["id"] for p in de_novo["historico"]], [oid])
+        self.assertEqual(len(de_novo["historico"]), 1)
+
+    def test_id_orfa_nao_passa_para_outro_anuncio(self) -> None:
+        titulo = "Monster Energy Ultra Pack 6 latas 473ml"
+        primeiro = build_ofertas(
+            [
+                self._obs_amazon(titulo, "B0AAA", 8.0),
+                self._obs_amazon(titulo, "B0BBB", 10.0),
+                self._obs_amazon(titulo, "B0CCC", 9.0),
+            ],
+            previous=None,
+            sites_ok={"amazon"},
+            generated_at=QUANDO,
+        )
+        # A loja respondeu e o ASIN B0AAA saiu das ofertas. O id gravado fica.
+        ficou = build_ofertas(
+            [
+                self._obs_amazon(titulo, "B0BBB", 10.0),
+                self._obs_amazon(titulo, "B0CCC", 9.0),
+            ],
+            previous=primeiro,
+            sites_ok={"amazon"},
+            generated_at=DEPOIS,
+        )
+
+        def por_id(feed: dict) -> dict[str, list[float]]:
+            series: dict[str, list[float]] = {}
+            for ponto in feed["historico"]:
+                series.setdefault(ponto["id"], []).append(ponto["preco_lata"])
+            return series
+
+        series = por_id(ficou)
+        self.assertEqual(series[f"amazon::{titulo} [B0AAA]"], [8.0])
+        self.assertEqual(series[f"amazon::{titulo} [B0BBB]"], [10.0])
+        self.assertEqual(series[f"amazon::{titulo} [B0CCC]"], [9.0])
+        self.assertFalse(any("||" in chave for chave in series))
+
+        so_um = build_ofertas(
+            [self._obs_amazon(titulo, "B0BBB", 10.0)],
+            previous=ficou,
+            sites_ok={"amazon"},
+            generated_at="2026-11-12T00:00:00Z",
+        )
+        series = por_id(so_um)
+        self.assertEqual(series[f"amazon::{titulo} [B0AAA]"], [8.0])
+        self.assertEqual(series[f"amazon::{titulo} [B0BBB]"], [10.0])
+        self.assertEqual(series[f"amazon::{titulo} [B0CCC]"], [9.0])
+        self.assertFalse(any("||" in chave for chave in series))
+        self.assertEqual(validar_ofertas(so_um), [])
+
+    def test_historico_sem_oferta_nao_grava_id_do_titulo(self) -> None:
+        titulo = "Monster Energy Pipeline Punch pack 6 latas 473ml"
+        anterior = {
+            "schema_version": 1,
+            "generated_at": QUANDO,
+            "ofertas": [],
+            "historico": [
+                {
+                    "loja": "shopee",
+                    "sabor": "Pipeline Punch",
+                    "nome": titulo,
+                    "pack_qtd": 6,
+                    "preco_lata": 7.98,
+                    "visto_em": QUANDO,
+                }
+            ],
+        }
+        feed = build_ofertas(
+            [],
+            previous=anterior,
+            sites_ok=set(),
+            generated_at=DEPOIS,
+        )
+        self.assertEqual(len(feed["historico"]), 1)
+        self.assertNotIn("id", feed["historico"][0])
+        self.assertEqual(feed["historico"][0]["preco_lata"], 7.98)
+        self.assertEqual(feed["historico"][0]["visto_em"], QUANDO)
+
+        oid = f"shopee::{titulo} [9988]"
+        voltou = build_ofertas(
+            [
+                observacao_from_item(
+                    "shopee",
+                    {
+                        "produto": f"{titulo} [9988]",
+                        "titulo": titulo,
+                        "qtd": 6,
+                        "preco_pack": 47.88,
+                        "preco_lata": 7.98,
+                        "preco": 7.98,
+                        "frete": None,
+                    },
+                    preco_anterior=7.98,
+                )
+            ],
+            previous=feed,
+            sites_ok={"shopee"},
+            generated_at="2026-11-12T00:00:00Z",
+        )
+        self.assertEqual([p["id"] for p in voltou["historico"]], [oid])
+        self.assertEqual([p["preco_lata"] for p in voltou["historico"]], [7.98])
+        self.assertEqual(voltou["historico"][0]["visto_em"], QUANDO)
+
+    def test_historico_limita_60_por_id_e_nao_por_titulo(self) -> None:
+        titulo = "Monster Energy Ultra Pack 6 latas 473ml"
+
+        def pontos(asin: str) -> list[dict]:
+            oid = f"amazon::{titulo} [{asin}]"
+            return [
+                {
+                    "id": oid,
+                    "loja": "amazon",
+                    "sabor": "Ultra",
+                    "nome": titulo,
+                    "pack_qtd": 6,
+                    "preco_lata": float(i),
+                    "visto_em": f"2026-03-{(i // 24) + 1:02d}T{i % 24:02d}:00:00Z",
+                }
+                for i in range(HISTORICO_MAX_PONTOS)
+            ]
+
+        previous = {
+            "schema_version": 1,
+            "generated_at": QUANDO,
+            "ofertas": [],
+            "historico": pontos("B0AAA") + pontos("B0BBB"),
+        }
+        feed = build_ofertas(
+            [self._obs_amazon(titulo, "B0AAA", 4.2), self._obs_amazon(titulo, "B0BBB", 4.2)],
+            previous=previous,
+            sites_ok={"amazon"},
+            generated_at=DEPOIS,
+        )
+        self.assertEqual(len(feed["historico"]), HISTORICO_MAX_PONTOS * 2)
+        self.assertEqual(validar_ofertas(feed), [])
+        for asin in ("B0AAA", "B0BBB"):
+            serie = [p for p in feed["historico"] if p["id"].endswith(f"[{asin}]")]
+            self.assertEqual(len(serie), HISTORICO_MAX_PONTOS)
+            self.assertEqual(serie[-1]["preco_lata"], 4.2)
+
+        estourado = {
+            "schema_version": 1,
+            "generated_at": QUANDO,
+            "ofertas": [],
+            "historico": pontos("B0AAA")
+            + [
+                {
+                    "id": f"amazon::{titulo} [B0AAA]",
+                    "loja": "amazon",
+                    "sabor": "Ultra",
+                    "nome": titulo,
+                    "pack_qtd": 6,
+                    "preco_lata": 99.0,
+                    "visto_em": "2026-04-01T00:00:00Z",
+                }
+            ],
+        }
+        erros = validar_ofertas(estourado)
+        self.assertTrue(any("excede" in erro and "B0AAA" in erro for erro in erros))
 
     def test_workflow_versiona_os_dois_arquivos(self) -> None:
         texto = (REPO / ".github/workflows/price-monitor.yml").read_text(encoding="utf-8")

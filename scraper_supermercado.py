@@ -41,6 +41,76 @@ def absolute_http_url(base: str, raw: Optional[str]) -> Optional[str]:
         return None
     return absoluta
 
+
+# Atributos preguiçosos primeiro. currentSrc/src ficam por último: no Magento
+# (Tauste) ``src`` é um placeholder absoluto e a foto está em ``data-src``.
+_ATRIBUTOS_IMAGEM_LAZY = (
+    "data-src",
+    "data-original",
+    "data-lazy-src",
+    "data-lazy",
+    "data-original-src",
+    "data-srcset",
+    "srcset",
+)
+_ATRIBUTOS_IMAGEM_DIRETOS = ("currentSrc", "src")
+_ATRIBUTOS_SRCSET = {"data-srcset", "srcset"}
+_SRCSET_DESC = re.compile(r"\s+\d+(?:\.\d+)?[wx]\b", re.IGNORECASE)
+
+
+def _expandir_srcset(valor: str) -> list[str]:
+    """URLs de um ``srcset`` (``url 1x, url 2x`` ou ``url 320w``), na ordem escrita."""
+    urls: list[str] = []
+    for parte in (valor or "").split(","):
+        pedaco = parte.strip()
+        if not pedaco:
+            continue
+        url = pedaco.split()[0].strip().strip("\"'")
+        if url:
+            urls.append(url)
+    return urls
+
+
+def _valores_de_atributo(nome: str, valor: Any) -> list[str]:
+    if not isinstance(valor, str):
+        return []
+    texto = valor.strip()
+    if not texto:
+        return []
+    if nome in _ATRIBUTOS_SRCSET or _SRCSET_DESC.search(texto):
+        return _expandir_srcset(texto)
+    return [texto]
+
+
+def escolher_imagem_card(base: str, atributos: Any) -> Optional[str]:
+    """Primeira URL http(s) do card que não é placeholder.
+
+    Prefere ``data-src``, ``data-original`` e ``srcset`` preguiçoso. Cada
+    candidato que ``absolute_http_url`` rejeita (placeholder, ``data:``,
+    vazio) cede a vez ao próximo; ``currentSrc`` e ``src`` só entram no fim.
+    """
+    if not isinstance(atributos, dict):
+        return None
+    candidatos: list[str] = []
+    for nome in _ATRIBUTOS_IMAGEM_LAZY:
+        candidatos.extend(_valores_de_atributo(nome, atributos.get(nome)))
+    fontes = atributos.get("sources")
+    if isinstance(fontes, list):
+        for fonte in fontes:
+            if isinstance(fonte, str):
+                candidatos.extend(_valores_de_atributo("srcset", fonte))
+            elif isinstance(fonte, dict):
+                for nome in ("data-srcset", "srcset"):
+                    candidatos.extend(_valores_de_atributo(nome, fonte.get(nome)))
+    for nome in _ATRIBUTOS_IMAGEM_DIRETOS:
+        candidatos.extend(_valores_de_atributo(nome, atributos.get(nome)))
+    for bruto in candidatos:
+        url = absolute_http_url(base, bruto)
+        if url is not None:
+            return url
+    return None
+
+
 # Linhas que não são o preço venda do SKU (vitrine / mídia / tachado genérico).
 _LISTING_LINE_SKIP = re.compile(
     r"a\s+partir\s+de|"
@@ -639,18 +709,39 @@ class SupermarketScraper:
                 const a = (el.matches && el.matches('a[href]'))
                     ? el
                     : el.querySelector('a[href]');
-                const img = el.querySelector('img');
-                let src = '';
+                const img = (el.matches && el.matches('img'))
+                    ? el
+                    : el.querySelector('img');
+                const imagem = {};
+                const porNome = [
+                    'data-src', 'data-original', 'data-lazy-src', 'data-lazy',
+                    'data-original-src', 'data-srcset', 'srcset', 'src'
+                ];
                 if (img) {
-                    src = img.currentSrc
-                        || img.getAttribute('src')
-                        || img.getAttribute('data-src')
-                        || img.getAttribute('data-lazy')
-                        || '';
+                    for (const nome of porNome) {
+                        const valor = img.getAttribute(nome);
+                        if (valor && valor.trim()) imagem[nome] = valor.trim();
+                    }
+                    if (img.currentSrc) imagem.currentSrc = img.currentSrc;
                 }
+                const escopo = (el.matches && el.matches('img') && el.parentElement)
+                    ? el.parentElement
+                    : el;
+                const sources = [];
+                if (escopo && escopo.querySelectorAll) {
+                    for (const source of escopo.querySelectorAll('source')) {
+                        const lazy = (source.getAttribute('data-srcset') || '').trim();
+                        const srcset = (source.getAttribute('srcset') || '').trim();
+                        if (lazy || srcset) sources.push({
+                            'data-srcset': lazy,
+                            srcset: srcset,
+                        });
+                    }
+                }
+                if (sources.length) imagem.sources = sources;
                 return {
                     href: a ? (a.getAttribute('href') || '') : '',
-                    src: src || '',
+                    imagem: imagem,
                 };
             }"""
         )
@@ -658,7 +749,7 @@ class SupermarketScraper:
             return None, None
         return (
             absolute_http_url(page_url, data.get("href")),
-            absolute_http_url(page_url, data.get("src")),
+            escolher_imagem_card(page_url, data.get("imagem")),
         )
 
     async def __aenter__(self) -> "SupermarketScraper":
