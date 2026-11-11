@@ -335,23 +335,21 @@ def _resolver_serie_id(
 ) -> Optional[str]:
     """``id`` a gravar no ponto, ou ``None`` para não gravar.
 
-    Oferta conhecida e balde ambíguo (``||``) ficam como estão: dois anúncios
-    com o mesmo título não se fundem depois. Fora isso, um único anúncio com
-    o mesmo rótulo empresta o ``id`` real (``loja::produto``, com ASIN ou
-    itemId), inclusive um anúncio que só voltou nesta rodada. Não se fabrica
-    ``loja::nome`` a partir do título de vitrine — esse id não reencontra o
-    anúncio e grudaria nas rodadas seguintes.
+    Um ``id`` já gravado fica, mesmo que a oferta tenha saído do arquivo:
+    outro anúncio com o mesmo título não herda a série. Sem ``id``, um único
+    anúncio com o mesmo rótulo empresta o ``id`` real (``loja::produto``, com
+    ASIN ou itemId), inclusive um que só voltou nesta rodada. Vários anúncios
+    caem no balde ``||`` e não se fundem depois. Não se fabrica ``loja::nome``
+    a partir do título de vitrine.
     """
     explicito = _id_no_ponto(ponto)
-    if explicito is not None and (explicito in ofertas_por_id or "||" in explicito):
+    if explicito is not None:
         return explicito
     achados = _ids_da_mesma_oferta(loja, nome, sabor, pack, ofertas_por_id)
     if len(achados) == 1:
         return achados[0]
     if len(achados) > 1:
         return _chave_legada(loja, nome, sabor, pack)
-    if explicito is not None:
-        return explicito
     return None
 
 

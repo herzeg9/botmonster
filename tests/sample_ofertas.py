@@ -773,6 +773,54 @@ class OfertasFeedTest(unittest.TestCase):
         self.assertEqual([p["id"] for p in de_novo["historico"]], [oid])
         self.assertEqual(len(de_novo["historico"]), 1)
 
+    def test_id_orfa_nao_passa_para_outro_anuncio(self) -> None:
+        titulo = "Monster Energy Ultra Pack 6 latas 473ml"
+        primeiro = build_ofertas(
+            [
+                self._obs_amazon(titulo, "B0AAA", 8.0),
+                self._obs_amazon(titulo, "B0BBB", 10.0),
+                self._obs_amazon(titulo, "B0CCC", 9.0),
+            ],
+            previous=None,
+            sites_ok={"amazon"},
+            generated_at=QUANDO,
+        )
+        # A loja respondeu e o ASIN B0AAA saiu das ofertas. O id gravado fica.
+        ficou = build_ofertas(
+            [
+                self._obs_amazon(titulo, "B0BBB", 10.0),
+                self._obs_amazon(titulo, "B0CCC", 9.0),
+            ],
+            previous=primeiro,
+            sites_ok={"amazon"},
+            generated_at=DEPOIS,
+        )
+
+        def por_id(feed: dict) -> dict[str, list[float]]:
+            series: dict[str, list[float]] = {}
+            for ponto in feed["historico"]:
+                series.setdefault(ponto["id"], []).append(ponto["preco_lata"])
+            return series
+
+        series = por_id(ficou)
+        self.assertEqual(series[f"amazon::{titulo} [B0AAA]"], [8.0])
+        self.assertEqual(series[f"amazon::{titulo} [B0BBB]"], [10.0])
+        self.assertEqual(series[f"amazon::{titulo} [B0CCC]"], [9.0])
+        self.assertFalse(any("||" in chave for chave in series))
+
+        so_um = build_ofertas(
+            [self._obs_amazon(titulo, "B0BBB", 10.0)],
+            previous=ficou,
+            sites_ok={"amazon"},
+            generated_at="2026-11-12T00:00:00Z",
+        )
+        series = por_id(so_um)
+        self.assertEqual(series[f"amazon::{titulo} [B0AAA]"], [8.0])
+        self.assertEqual(series[f"amazon::{titulo} [B0BBB]"], [10.0])
+        self.assertEqual(series[f"amazon::{titulo} [B0CCC]"], [9.0])
+        self.assertFalse(any("||" in chave for chave in series))
+        self.assertEqual(validar_ofertas(so_um), [])
+
     def test_historico_sem_oferta_nao_grava_id_do_titulo(self) -> None:
         titulo = "Monster Energy Pipeline Punch pack 6 latas 473ml"
         anterior = {
