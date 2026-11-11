@@ -43,9 +43,11 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SHOPEE_AFFILIATE_APP_ID: ${{ secrets.SHOPEE_AFFILIATE_APP_ID }}
+          SHOPEE_AFFILIATE_SECRET: ${{ secrets.SHOPEE_AFFILIATE_SECRET }}
         run: python main.py
 
-      - name: Commit e push do histórico (se alterado)
+      - name: Commit e push do histórico e do feed (se alterados)
         run: |
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
@@ -54,9 +56,12 @@ jobs:
             exit 0
           fi
           git add historico_precos.json
+          if [ -f ofertas.json ]; then
+            git add ofertas.json
+          fi
           if git diff --staged --quiet; then
-            echo "historico_precos.json sem alterações."
+            echo "historico_precos.json e ofertas.json sem alterações."
           else
-            git commit -m "chore: atualiza historico_precos.json [skip ci]"
+            git commit -m "chore: atualiza historico_precos.json e ofertas.json [skip ci]"
             git push origin HEAD:main
           fi
