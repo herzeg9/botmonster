@@ -28,7 +28,8 @@ PACK_ALVO = 6
 _QUERY = (
     "query($kw:String,$page:Int,$limit:Int){productOfferV2(keyword:$kw,page:$page,"
     "limit:$limit,sortType:2){nodes{itemId shopId productName price priceMin priceMax "
-    "shopName productLink offerLink sales ratingStar}pageInfo{page limit hasNextPage}}}"
+    "shopName productLink offerLink imageUrl sales ratingStar}"
+    "pageInfo{page limit hasNextPage}}}"
 )
 
 _QTD_PATTERNS = [
@@ -60,6 +61,17 @@ def _auth_header(app_id: str, secret: str, payload: str, ts: Optional[int] = Non
     ts_s = str(ts if ts is not None else int(time.time()))
     sig = hashlib.sha256(f"{app_id}{ts_s}{payload}{secret}".encode()).hexdigest()
     return f"SHA256 Credential={app_id}, Timestamp={ts_s}, Signature={sig}"
+
+
+def _http_url(v: Any) -> Optional[str]:
+    if not isinstance(v, str):
+        return None
+    s = v.strip()
+    if s.startswith("//"):
+        s = "https:" + s
+    if s.startswith(("http://", "https://")):
+        return s
+    return None
 
 
 def _to_float(v: Any) -> Optional[float]:
@@ -99,6 +111,7 @@ def parse_nodes(nodes: list[dict[str, Any]], *, pack_alvo: int = PACK_ALVO) -> l
                 "prime": False,
                 "loja": n.get("shopName"),
                 "link": n.get("offerLink") or n.get("productLink") or "",
+                "imagem": _http_url(n.get("imageUrl")),
             }
         )
     return itens

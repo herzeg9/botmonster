@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import urllib.parse
 from typing import Any, Optional
 
 from bs4 import BeautifulSoup
@@ -20,6 +21,25 @@ from playwright.async_api import async_playwright
 logger = logging.getLogger(__name__)
 
 _POPUP_CHECK_TIMEOUT_MS = 3000
+
+_IMAGEM_INUTIL = ("placeholder", "blank.gif", "1x1", "pixel.gif", "spinner")
+
+
+def absolute_http_url(base: str, raw: Optional[str]) -> Optional[str]:
+    """Resolve ``raw`` contra ``base`` e devolve URL http(s), ou ``None``."""
+    if not raw:
+        return None
+    texto = raw.strip()
+    if not texto or texto.startswith(("data:", "javascript:", "#")):
+        return None
+    absoluta = urllib.parse.urljoin(base, texto)
+    parsed = urllib.parse.urlparse(absoluta)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        return None
+    baixa = absoluta.lower()
+    if any(tok in baixa for tok in _IMAGEM_INUTIL):
+        return None
+    return absoluta
 
 # Linhas que não são o preço venda do SKU (vitrine / mídia / tachado genérico).
 _LISTING_LINE_SKIP = re.compile(
@@ -489,7 +509,8 @@ class SupermarketScraper:
             card_wait_timeout_ms: Tempo máximo para o primeiro card aparecer.
 
         Returns:
-            Lista de ``{'produto': str | None, 'preco': float | None}``.
+            Lista de ``{'produto', 'preco', 'link', 'imagem'}``. ``link`` e
+            ``imagem`` são absolutos quando o card expõe; senão ``None``.
         """
         if self._browser is None:
             raise RuntimeError("Chame await start() antes de extract_search_results().")
@@ -581,7 +602,21 @@ class SupermarketScraper:
                         price_selector,
                     )
 
-                results.append({"produto": nome, "preco": preco_float})
+                link: Optional[str] = None
+                imagem: Optional[str] = None
+                try:
+                    link, imagem = await self._card_link_e_imagem(card, page.url)
+                except Exception as exc:  # noqa: BLE001 — mídia é opcional
+                    logger.warning("Falha ao ler link/imagem do card: %r", exc)
+
+                results.append(
+                    {
+                        "produto": nome,
+                        "preco": preco_float,
+                        "link": link,
+                        "imagem": imagem,
+                    }
+                )
 
         finally:
             # close() também pode travar se o renderer congelar: limite rígido.
@@ -592,6 +627,39 @@ class SupermarketScraper:
                     logger.warning("Falha/timeout ao fechar página/contexto: %r", exc)
 
         return results
+
+    @staticmethod
+    async def _card_link_e_imagem(
+        card: ElementHandle,
+        page_url: str,
+    ) -> tuple[Optional[str], Optional[str]]:
+        """Link do produto e URL da foto, absolutos, quando o card expõe."""
+        data = await card.evaluate(
+            """el => {
+                const a = (el.matches && el.matches('a[href]'))
+                    ? el
+                    : el.querySelector('a[href]');
+                const img = el.querySelector('img');
+                let src = '';
+                if (img) {
+                    src = img.currentSrc
+                        || img.getAttribute('src')
+                        || img.getAttribute('data-src')
+                        || img.getAttribute('data-lazy')
+                        || '';
+                }
+                return {
+                    href: a ? (a.getAttribute('href') || '') : '',
+                    src: src || '',
+                };
+            }"""
+        )
+        if not isinstance(data, dict):
+            return None, None
+        return (
+            absolute_http_url(page_url, data.get("href")),
+            absolute_http_url(page_url, data.get("src")),
+        )
 
     async def __aenter__(self) -> "SupermarketScraper":
         """Entrada do context manager assíncrono: inicia o navegador."""

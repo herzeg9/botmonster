@@ -15,10 +15,18 @@ import requests
 from dotenv import load_dotenv
 
 from config_sites import SITES_CONFIG
+from ofertas_feed import (
+    build_ofertas,
+    iso_now,
+    load_ofertas,
+    observacao_from_item,
+    offer_id,
+    save_ofertas,
+)
 from scraper_amazon import fetch_amazon_packs
 from scraper_shopee import fetch_shopee_packs
 from scraper_supermercado import SupermarketScraper
-from telegram_notifier import send_telegram_alert
+from telegram_notifier import escape_html, send_telegram_alert
 
 _ENV_PATH = Path(__file__).resolve().parent / ".env"
 
@@ -93,7 +101,7 @@ def _normalize_preco(val: Any) -> float:
 
 def _historico_chave(site_id: str, nome_produto: str) -> str:
     """Chave única por site + nome de produto (evita colisão multi-sites)."""
-    return f"{site_id}::{nome_produto.strip()}"
+    return offer_id(site_id, nome_produto)
 
 
 def normalize_history(historico: Any) -> dict[str, float]:
@@ -171,7 +179,12 @@ def _produto_elegivel(nome: str) -> bool:
 def _build_alert_message(
     produto: str, preco: float, site_id: str, extra: Optional[dict[str, Any]] = None
 ) -> str:
-    """Monta o texto do alerta em Markdown, incluindo o identificador do site."""
+    """Monta o alerta em HTML do Telegram.
+
+    Título e link entram escapados. Um ``_`` em nome de produto ou em
+    ``offerLink`` da Shopee não pode derrubar o ``sendMessage`` (o modo
+    Markdown antigo tratava ``_`` como itálico e a API recusava a mensagem).
+    """
     if extra and "preco_pack" in extra:
         frete = extra.get("frete")
         frete_txt = (
@@ -185,21 +198,21 @@ def _build_alert_message(
         )
         return (
             "⚠️ ALERTA DE PREÇO BAÍXO ⚠️\n\n"
-            f"Site: {site_id}\n"
-            f"Produto: {extra.get('titulo', produto)}\n"
-            f"Pack {extra.get('qtd')} latas: R$ {extra['preco_pack']:.2f}\n"
-            f"Frete: {frete_txt} ({extra.get('frete_obs', '')})\n"
+            f"Site: {escape_html(site_id)}\n"
+            f"Produto: {escape_html(extra.get('titulo', produto))}\n"
+            f"Pack {escape_html(extra.get('qtd'))} latas: R$ {extra['preco_pack']:.2f}\n"
+            f"Frete: {escape_html(frete_txt)} ({escape_html(extra.get('frete_obs', ''))})\n"
             f"{prime_txt}"
-            f"*Preço por lata:* R$ {preco:.2f}\n"
-            f"{extra.get('link', '')}\n"
-            f"_Monster · limiar ≤ R$ {MONSTER_ALERT_MAX_PRICE:.2f}/lata_"
+            f"<b>Preço por lata:</b> R$ {preco:.2f}\n"
+            f"{escape_html(extra.get('link', ''))}\n"
+            f"<i>Monster · limiar ≤ R$ {MONSTER_ALERT_MAX_PRICE:.2f}/lata</i>"
         )
     return (
         "⚠️ ALERTA DE PREÇO BAÍXO ⚠️\n\n"
-        f"Site: {site_id}\n"
-        f"Produto: {produto}\n"
-        f"*Preço encontrado:* R$ {preco:.2f}\n"
-        f"_Monster · limiar ≤ R$ {MONSTER_ALERT_MAX_PRICE:.2f}_"
+        f"Site: {escape_html(site_id)}\n"
+        f"Produto: {escape_html(produto)}\n"
+        f"<b>Preço encontrado:</b> R$ {preco:.2f}\n"
+        f"<i>Monster · limiar ≤ R$ {MONSTER_ALERT_MAX_PRICE:.2f}</i>"
     )
 
 
@@ -215,11 +228,15 @@ async def _registrar_preco_monster(
 ) -> None:
     """Espelha o preço do site no histórico; alerta só se mudou e está no limiar.
 
-    * **Histórico** — todo item com ``monster`` no nome e preço válido na listagem
-      é gravado em ``historico_precos.json`` com o valor atual do site, acima ou
-      abaixo do limiar.
-    * **Telegram** — só quando o preço **mudou** em relação ao histórico e
+    * **Histórico** — item com ``monster`` no nome e preço válido é gravado
+      quando não há alerta a enviar, ou **depois** que o Telegram confirma
+      o envio.
+    * **Telegram** — só quando o preço **mudou** e
       ``preço <= MONSTER_ALERT_MAX_PRICE``.
+    * **Falha de envio** — o preço novo **não** entra no histórico. A chave
+      continua diferente na próxima execução e o alerta é tentado de novo.
+      Sem isso, um ``sendMessage`` recusado (Markdown quebrado, rede, HTTP)
+      gravava o preço e o desconto nunca mais era avisado.
     """
     chave = _historico_chave(site_id, nome)
     preco_atual = _normalize_preco(preco)
@@ -229,12 +246,11 @@ async def _registrar_preco_monster(
         or _normalize_preco(preco_anterior) != preco_atual
     )
 
-    historico[chave] = preco_atual
-
     if not preco_mudou:
         return
 
     if preco_atual > MONSTER_ALERT_MAX_PRICE:
+        historico[chave] = preco_atual
         logging.info(
             "Preço alterado no histórico (acima do limiar, sem alerta) — "
             "site=%r produto=%r preço=%.2f",
@@ -244,10 +260,7 @@ async def _registrar_preco_monster(
         )
         return
 
-    if telegram_token and telegram_chat_id:
-        mensagem = _build_alert_message(nome, preco_atual, site_id, extra)
-        await send_telegram_alert(telegram_token, telegram_chat_id, mensagem)
-    else:
+    if not telegram_token or not telegram_chat_id:
         logging.warning(
             "Preço no limiar sem alerta enviado (Telegram não configurado) — "
             "site=%r produto=%r preço=%.2f",
@@ -255,6 +268,32 @@ async def _registrar_preco_monster(
             nome,
             preco_atual,
         )
+        historico[chave] = preco_atual
+        return
+
+    try:
+        mensagem = _build_alert_message(nome, preco_atual, site_id, extra)
+    except Exception:
+        logging.exception(
+            "Falha ao montar o alerta; preço não gravado para repetir "
+            "na próxima execução — site=%r produto=%r",
+            site_id,
+            nome,
+        )
+        return
+
+    enviado = await send_telegram_alert(telegram_token, telegram_chat_id, mensagem)
+    if not enviado:
+        logging.error(
+            "Alerta Telegram não enviado; preço não gravado para repetir "
+            "na próxima execução — site=%r produto=%r preço=%.2f",
+            site_id,
+            nome,
+            preco_atual,
+        )
+        return
+
+    historico[chave] = preco_atual
 
 
 def _parse_mercado_livre_search_payload(data: Any) -> list[dict[str, Any]]:
@@ -303,9 +342,18 @@ async def fetch_search_results_api(url: str) -> list[dict[str, Any]]:
     return _parse_mercado_livre_search_payload(data)
 
 
-async def main(historico: dict, arquivo_historico: str) -> None:
-    """Varre cada site em ``SITES_CONFIG`` e persiste preços Monster no histórico."""
+async def main(
+    historico: dict,
+    arquivo_historico: str,
+    arquivo_ofertas: str = "ofertas.json",
+) -> None:
+    """Varre cada site em ``SITES_CONFIG`` e persiste preços e o feed do app."""
     telegram_token, telegram_chat_id = load_telegram_credentials()
+    # Snapshot antes dos alertas: ``preco_lata_anterior`` é o preço da rodada
+    # anterior, mesmo quando o envio falha e o histórico não é atualizado.
+    historico_antes = dict(historico)
+    observacoes: list[dict[str, Any]] = []
+    sites_ok: set[str] = set()
 
     precisa_browser = any(
         cfg["tipo"] in ("html", "amazon") for cfg in SITES_CONFIG.values()
@@ -410,6 +458,9 @@ async def main(historico: dict, arquivo_historico: str) -> None:
             print({"site": site_id, "url": url_alvo, "itens": itens})
 
             if not itens:
+                # Lista vazia (captcha, API 10035, seletor quebrado ou busca sem
+                # Monster) não conta como sucesso: o feed mantém a última oferta
+                # dessa loja em vez de apagá-la.
                 logging.warning(
                     "Lista vazia — site=%r url=%r (sem resultados ou formato inesperado).",
                     site_id,
@@ -425,6 +476,16 @@ async def main(historico: dict, arquivo_historico: str) -> None:
                 if not _produto_elegivel(nome):
                     continue
 
+                chave = _historico_chave(site_id, nome)
+                obs = observacao_from_item(
+                    site_id,
+                    item,
+                    preco_anterior=historico_antes.get(chave),
+                )
+                if obs is not None:
+                    observacoes.append(obs)
+                    sites_ok.add(site_id)
+
                 await _registrar_preco_monster(
                     historico,
                     site_id=site_id,
@@ -435,6 +496,22 @@ async def main(historico: dict, arquivo_historico: str) -> None:
                     extra=item if "preco_pack" in item else None,
                 )
 
+        try:
+            feed = build_ofertas(
+                observacoes,
+                previous=load_ofertas(arquivo_ofertas),
+                sites_ok=sites_ok,
+                generated_at=iso_now(),
+            )
+            save_ofertas(arquivo_ofertas, feed)
+            logging.info(
+                "ofertas.json: %d ofertas, %d séries de histórico",
+                len(feed["ofertas"]),
+                len(feed["historico"]),
+            )
+        except Exception:
+            logging.exception("Falha ao gravar ofertas.json")
+
         save_history(arquivo_historico, historico)
     finally:
         if scraper is not None:
@@ -444,5 +521,6 @@ async def main(historico: dict, arquivo_historico: str) -> None:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     ARQUIVO_HISTORICO = "historico_precos.json"
+    ARQUIVO_OFERTAS = "ofertas.json"
     historico = load_history(ARQUIVO_HISTORICO)
-    asyncio.run(main(historico, ARQUIVO_HISTORICO))
+    asyncio.run(main(historico, ARQUIVO_HISTORICO, ARQUIVO_OFERTAS))

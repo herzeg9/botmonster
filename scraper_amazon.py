@@ -111,6 +111,14 @@ def parse_search_html(html: str, *, pack_alvo: int = PACK_ALVO) -> list[dict[str
         preco = parse_brl(preco_el.get_text(strip=True)) if preco_el else None
         if preco is None:
             continue  # indisponível / sem oferta na listagem
+        img = card.select_one("img.s-image")
+        imagem = None
+        if img is not None:
+            imagem = (img.get("src") or img.get("data-src") or "").strip() or None
+            if imagem and imagem.startswith("//"):
+                imagem = "https:" + imagem
+            if imagem and not imagem.startswith(("http://", "https://")):
+                imagem = None
         entrega = card.select_one('[data-cy="delivery-recipe"]')
         frete, frete_obs = parse_frete(entrega.get_text(" ", strip=True) if entrega else "")
         prime = bool(
@@ -135,6 +143,7 @@ def parse_search_html(html: str, *, pack_alvo: int = PACK_ALVO) -> list[dict[str
                 "prime": prime,
                 "patrocinado": patrocinado,
                 "link": f"{AMAZON_BASE}/dp/{asin}",
+                "imagem": imagem,
             }
         )
     return itens

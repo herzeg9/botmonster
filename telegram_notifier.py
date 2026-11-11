@@ -2,31 +2,37 @@
 
 from __future__ import annotations
 
+import html
 from typing import Any, Optional
 
 import aiohttp
 
 
-async def send_telegram_alert(token: str, chat_id: str, message: str) -> None:
-    """Envia uma mensagem ao chat configurado usando a API ``sendMessage`` do Telegram.
+def escape_html(text: object) -> str:
+    """Escapa texto para o ``parse_mode`` HTML do Telegram.
 
-    A requisição é não bloqueante (aiohttp + async/await). O corpo usa
-    ``parse_mode='Markdown'`` para permitir formatação futura (negrito/itálico).
+    ``<``, ``>`` e ``&`` quebram o parser; ``_`` e ``*`` (comuns em título e
+    link de afiliado) são literais e não precisam de escape.
+    """
+    return html.escape(str(text), quote=False)
 
-    Args:
-        token: Token do bot (``@BotFather``).
-        chat_id: Identificador do chat ou canal de destino.
-        message: Texto da mensagem (Markdown quando aplicável).
 
-    Note:
-        Em falha HTTP ou quando a API retorna ``ok: false`` no JSON, o erro é
-        impresso no terminal (telemetria da transmissão).
+async def send_telegram_alert(token: str, chat_id: str, message: str) -> bool:
+    """Envia uma mensagem ao chat configurado usando ``sendMessage``.
+
+    O corpo usa ``parse_mode='HTML'``. O texto já deve vir escapado
+    (:func:`escape_html`); tags ``<b>`` e ``<i>`` são as únicas marcações.
+
+    Returns:
+        ``True`` só quando a API responde HTTP 200 e ``ok: true``.
+        Qualquer falha de rede, HTTP ou ``ok: false`` devolve ``False``
+        (o chamador decide se tenta de novo).
     """
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload: dict[str, Any] = {
         "chat_id": chat_id,
         "text": message,
-        "parse_mode": "Markdown",
+        "parse_mode": "HTML",
     }
 
     try:
@@ -43,7 +49,7 @@ async def send_telegram_alert(token: str, chat_id: str, message: str) -> None:
                         "[telegram_notifier] Falha na transmissão da telemetria: "
                         f"HTTP {response.status} — resposta: {body_text[:500]!r}"
                     )
-                    return
+                    return False
 
                 try:
                     data: Optional[dict[str, Any]] = await response.json()
@@ -55,8 +61,17 @@ async def send_telegram_alert(token: str, chat_id: str, message: str) -> None:
                         "[telegram_notifier] Falha na transmissão da telemetria: "
                         f"API Telegram retornou ok=false ou corpo inesperado — {data!r}"
                     )
+                    return False
+                return True
     except aiohttp.ClientError as exc:
         print(
             "[telegram_notifier] Falha na transmissão da telemetria (rede/HTTP client): "
             f"{exc!r}"
         )
+        return False
+    except Exception as exc:  # noqa: BLE001 — falha de envio não pode parecer sucesso
+        print(
+            "[telegram_notifier] Falha na transmissão da telemetria (inesperada): "
+            f"{exc!r}"
+        )
+        return False
