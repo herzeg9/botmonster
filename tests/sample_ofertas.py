@@ -736,6 +736,96 @@ class OfertasFeedTest(unittest.TestCase):
         self.assertEqual(feed["historico"][0]["id"], f"tauste::{nome}")
         self.assertEqual(feed["historico"][0]["visto_em"], QUANDO)
 
+    def test_historico_amazon_sem_id_reencaixa_no_asin_desta_rodada(self) -> None:
+        titulo = "Monster Energy Ultra Pack 6 latas 473ml"
+        oid = f"amazon::{titulo} [B0AAA]"
+        anterior = {
+            "schema_version": 1,
+            "generated_at": QUANDO,
+            "ofertas": [],
+            "historico": [
+                {
+                    "loja": "amazon",
+                    "sabor": "Ultra",
+                    "nome": titulo,
+                    "pack_qtd": 6,
+                    "preco_lata": 8.0,
+                    "visto_em": QUANDO,
+                }
+            ],
+        }
+        feed = build_ofertas(
+            [self._obs_amazon(titulo, "B0AAA", 8.0)],
+            previous=anterior,
+            sites_ok={"amazon"},
+            generated_at=DEPOIS,
+        )
+        self.assertEqual([p["id"] for p in feed["historico"]], [oid])
+        self.assertEqual([p["preco_lata"] for p in feed["historico"]], [8.0])
+        self.assertNotIn(f"amazon::{titulo}", {p["id"] for p in feed["historico"]})
+
+        de_novo = build_ofertas(
+            [self._obs_amazon(titulo, "B0AAA", 8.0)],
+            previous=feed,
+            sites_ok={"amazon"},
+            generated_at="2026-11-12T00:00:00Z",
+        )
+        self.assertEqual([p["id"] for p in de_novo["historico"]], [oid])
+        self.assertEqual(len(de_novo["historico"]), 1)
+
+    def test_historico_sem_oferta_nao_grava_id_do_titulo(self) -> None:
+        titulo = "Monster Energy Pipeline Punch pack 6 latas 473ml"
+        anterior = {
+            "schema_version": 1,
+            "generated_at": QUANDO,
+            "ofertas": [],
+            "historico": [
+                {
+                    "loja": "shopee",
+                    "sabor": "Pipeline Punch",
+                    "nome": titulo,
+                    "pack_qtd": 6,
+                    "preco_lata": 7.98,
+                    "visto_em": QUANDO,
+                }
+            ],
+        }
+        feed = build_ofertas(
+            [],
+            previous=anterior,
+            sites_ok=set(),
+            generated_at=DEPOIS,
+        )
+        self.assertEqual(len(feed["historico"]), 1)
+        self.assertNotIn("id", feed["historico"][0])
+        self.assertEqual(feed["historico"][0]["preco_lata"], 7.98)
+        self.assertEqual(feed["historico"][0]["visto_em"], QUANDO)
+
+        oid = f"shopee::{titulo} [9988]"
+        voltou = build_ofertas(
+            [
+                observacao_from_item(
+                    "shopee",
+                    {
+                        "produto": f"{titulo} [9988]",
+                        "titulo": titulo,
+                        "qtd": 6,
+                        "preco_pack": 47.88,
+                        "preco_lata": 7.98,
+                        "preco": 7.98,
+                        "frete": None,
+                    },
+                    preco_anterior=7.98,
+                )
+            ],
+            previous=feed,
+            sites_ok={"shopee"},
+            generated_at="2026-11-12T00:00:00Z",
+        )
+        self.assertEqual([p["id"] for p in voltou["historico"]], [oid])
+        self.assertEqual([p["preco_lata"] for p in voltou["historico"]], [7.98])
+        self.assertEqual(voltou["historico"][0]["visto_em"], QUANDO)
+
     def test_historico_limita_60_por_id_e_nao_por_titulo(self) -> None:
         titulo = "Monster Energy Ultra Pack 6 latas 473ml"
 

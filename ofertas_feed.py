@@ -267,17 +267,19 @@ def _ponto_historico(
     pack_qtd: int,
     preco_lata: float,
     visto_em: str,
-    serie_id: str,
+    serie_id: Optional[str],
 ) -> dict[str, Any]:
-    return {
+    ponto: dict[str, Any] = {
         "loja": loja,
         "sabor": sabor,
         "nome": nome,
         "pack_qtd": pack_qtd,
         "preco_lata": preco_lata,
         "visto_em": visto_em,
-        "id": serie_id,
     }
+    if serie_id:
+        ponto["id"] = serie_id
+    return ponto
 
 
 def _id_no_ponto(ponto: dict[str, Any]) -> Optional[str]:
@@ -330,30 +332,27 @@ def _resolver_serie_id(
     sabor: str,
     pack: int,
     ofertas_por_id: dict[str, dict[str, Any]],
-) -> str:
-    """Chave interna da série.
+) -> Optional[str]:
+    """``id`` a gravar no ponto, ou ``None`` para não gravar.
 
-    ``id`` gravado no ponto ganha. Sem ele, um único anúncio anterior com o
-    mesmo rótulo empresta o seu ``id``. Vários anúncios (Amazon/Shopee com
-    o mesmo título e ASIN/itemId diferentes) não voltam a ser fundidos.
+    Oferta conhecida e balde ambíguo (``||``) ficam como estão: dois anúncios
+    com o mesmo título não se fundem depois. Fora isso, um único anúncio com
+    o mesmo rótulo empresta o ``id`` real (``loja::produto``, com ASIN ou
+    itemId), inclusive um anúncio que só voltou nesta rodada. Não se fabrica
+    ``loja::nome`` a partir do título de vitrine — esse id não reencontra o
+    anúncio e grudaria nas rodadas seguintes.
     """
     explicito = _id_no_ponto(ponto)
-    if explicito is not None:
+    if explicito is not None and (explicito in ofertas_por_id or "||" in explicito):
         return explicito
     achados = _ids_da_mesma_oferta(loja, nome, sabor, pack, ofertas_por_id)
     if len(achados) == 1:
         return achados[0]
-    # Sem anúncio único: supermercado reencontra ``loja::nome`` quando o
-    # rótulo é o que o nome sozinho produziria. Vários anúncios com o mesmo
-    # título ficam numa série à parte e não são absorvidos por um ASIN ou
-    # itemId que tenha sobrado.
-    if (
-        not achados
-        and pack == (parse_pack_qtd(nome) or 1)
-        and sabor == derivar_sabor(nome)
-    ):
-        return offer_id(loja, nome)
-    return _chave_legada(loja, nome, sabor, pack)
+    if len(achados) > 1:
+        return _chave_legada(loja, nome, sabor, pack)
+    if explicito is not None:
+        return explicito
+    return None
 
 
 def _meta_legado(oid: str, ofertas_por_id: dict[str, dict[str, Any]]) -> Optional[tuple[str, str, str, int]]:
@@ -425,14 +424,26 @@ def _series_de_historico(
             preco = _numero(ponto.get("preco_lata"))
             if pack is None or preco is None:
                 continue
-            chave = _resolver_serie_id(
+            resolvido = _resolver_serie_id(
                 ponto, str(loja), nome_limpo, sabor, pack, ofertas_por_id
             )
+            if resolvido is None:
+                chave = _chave_legada(str(loja), nome_limpo, sabor, pack)
+                serie_id: Optional[str] = None
+            else:
+                chave = resolvido
+                serie_id = resolvido
             soltos.append(
                 (
                     chave,
                     _ponto_historico(
-                        str(loja), sabor, nome_limpo, pack, preco, str(ponto["visto_em"]), chave
+                        str(loja),
+                        sabor,
+                        nome_limpo,
+                        pack,
+                        preco,
+                        str(ponto["visto_em"]),
+                        serie_id,
                     ),
                 )
             )
@@ -533,9 +544,11 @@ def build_ofertas(
         key=lambda o: (str(o.get("loja")), str(o.get("nome")), str(o.get("id"))),
     )
 
+    # Ofertas desta rodada entram na resolução: um anúncio que voltou agora
+    # empresta o id real. O arquivo anterior sozinho não tem o ASIN/itemId.
     series = _series_de_historico(
         previous.get("historico") if isinstance(previous, dict) else None,
-        anteriores,
+        {**anteriores, **atuais},
     )
     for oferta in atuais.values():
         pack = _pack_inteiro(oferta.get("pack_qtd"), str(oferta.get("nome") or ""))
