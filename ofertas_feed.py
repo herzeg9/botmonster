@@ -36,7 +36,7 @@ from scraper_amazon import parse_pack_qtd
 SCHEMA_VERSION = 1
 HISTORICO_MAX_PONTOS = 60
 
-LOJAS = ("pao_de_acucar", "tauste", "sams_club", "amazon", "shopee")
+LOJAS = ("pao_de_acucar", "tauste", "sams_club", "amazon", "shopee", "mercado_livre")
 
 _OFERTA_CHAVES = (
     "id",
@@ -192,8 +192,8 @@ def observacao_from_item(
     """Normaliza um item de scraper para a montagem do feed.
 
     ``preco`` do item é o valor que o monitor grava (por lata nos packs
-    Amazon/Shopee; preço de prateleira no HTML). ``preco_lata_anterior``
-    vem do histórico **antes** desta execução.
+    Amazon/Shopee/Mercado Livre; preço de prateleira no HTML).
+    ``preco_lata_anterior`` vem do histórico **antes** desta execução.
     """
     nome_historico = _texto_ou_none(item.get("produto"))
     if not nome_historico:

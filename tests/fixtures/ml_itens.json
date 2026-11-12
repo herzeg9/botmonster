@@ -1,0 +1,64 @@
+{
+  "MLB100473": {
+    "results": [
+      {
+        "item_id": "MLB60691749",
+        "price": 22.99,
+        "original_price": 29.9,
+        "seller_id": 1001,
+        "condition": "new",
+        "shipping": {
+          "free_shipping": false,
+          "cost": 17.7,
+          "logistic_type": "drop_off",
+          "mode": "me2"
+        }
+      },
+      {
+        "item_id": "MLB7000001",
+        "price": 50.0,
+        "seller_id": 1002,
+        "condition": "new",
+        "permalink": "https://www.mercadolivre.com.br/anuncio-mais-caro/p/MLB7000001",
+        "shipping": {
+          "free_shipping": false,
+          "cost": 10.0,
+          "logistic_type": "drop_off",
+          "mode": "me2"
+        }
+      }
+    ]
+  },
+  "MLB100006": {
+    "results": [
+      {
+        "item_id": "MLB8000006",
+        "price": 72.0,
+        "seller_id": 2002,
+        "condition": "new",
+        "permalink": "https://www.mercadolivre.com.br/monster-ultra-pack/p/MLB100006",
+        "shipping": {
+          "free_shipping": true,
+          "cost": 15.0,
+          "logistic_type": "fulfillment",
+          "mode": "me2"
+        }
+      }
+    ]
+  },
+  "MLB100007": {
+    "results": [
+      {
+        "item_id": "MLB8000007",
+        "price": 18.0,
+        "seller_id": 3003,
+        "condition": "new",
+        "shipping": {
+          "free_shipping": false,
+          "logistic_type": "drop_off",
+          "mode": "me2"
+        }
+      }
+    ]
+  }
+}
