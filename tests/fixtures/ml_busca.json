@@ -1,0 +1,86 @@
+{
+  "keywords": "monster energy 473ml",
+  "paging": {"total": 315, "limit": 50, "offset": 0},
+  "results": [
+    {
+      "id": "MLB100473",
+      "status": "active",
+      "domain_id": "MLB-ENERGY_DRINKS",
+      "name": "Energético Monster Energy Green 473ml",
+      "attributes": [
+        {"id": "BRAND", "name": "Marca", "value_name": "Monster"},
+        {
+          "id": "UNIT_VOLUME",
+          "name": "Volume da unidade",
+          "value_name": "473 mL",
+          "value_struct": {"number": 473, "unit": "mL"}
+        }
+      ],
+      "pictures": [
+        {
+          "id": "pic-green",
+          "url": "https://http2.mlstatic.com/D_NQ_NP_monster-green.jpg"
+        }
+      ]
+    },
+    {
+      "id": "MLB100250",
+      "status": "active",
+      "domain_id": "MLB-ENERGY_DRINKS",
+      "name": "Energético Monster Energy 250ml"
+    },
+    {
+      "id": "MLB200473",
+      "status": "active",
+      "domain_id": "MLB-ENERGY_DRINKS",
+      "name": "Red Bull Energy Drink 473ml"
+    },
+    {
+      "id": "MLB300999",
+      "status": "active",
+      "domain_id": "MLB-T_SHIRTS",
+      "name": "Camiseta Monster Energy 473ml"
+    },
+    {
+      "id": "MLB100006",
+      "status": "active",
+      "domain_id": "MLB-ENERGY_DRINKS",
+      "name": "Monster Energy Ultra pack com 6 latas 473ml",
+      "attributes": [
+        {"id": "BRAND", "name": "Marca", "value_name": "Monster"}
+      ],
+      "pictures": [
+        {"id": "pic-ultra", "url": "https://http2.mlstatic.com/D_NQ_NP_monster-ultra.jpg"}
+      ]
+    },
+    {
+      "id": "MLB100008",
+      "status": "inactive",
+      "domain_id": "MLB-ENERGY_DRINKS",
+      "name": "Energético Monster Energy 473ml"
+    },
+    {
+      "id": "MLB100009",
+      "status": "active",
+      "domain_id": "MLB-ENERGY_DRINKS",
+      "name": "Monster Energy kit 473ml + 355ml"
+    },
+    {
+      "id": "MLB100007",
+      "domain_id": "MLB-ENERGY_DRINKS",
+      "name": "Energético Lata",
+      "attributes": [
+        {"id": "BRAND", "name": "Marca", "value_name": "Monster"},
+        {
+          "id": "UNIT_VOLUME",
+          "name": "Volume da unidade",
+          "value_name": "473 mL",
+          "value_struct": {"number": 473, "unit": "mL"}
+        }
+      ],
+      "pictures": [
+        {"id": "pic-lata", "url": "https://http2.mlstatic.com/D_NQ_NP_monster-lata.jpg"}
+      ]
+    }
+  ]
+}

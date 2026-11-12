@@ -4,8 +4,10 @@ Cada entrada em :data:`SITES_CONFIG` descreve **onde** buscar (URL com ``{query}
 e **com** extrair os dados:
 
 * ``tipo == "html"`` — listagem web; preenche os seletores CSS para o Playwright/DOM.
-* ``tipo == "api"`` — endpoint REST; seletores ficam vazios; a orquestração deve
-  usar um cliente HTTP e mapear o JSON no ``main``.
+* ``tipo == "api"`` — catálogo oficial do Mercado Livre (:mod:`scraper_mercado_livre`):
+  OAuth ``client_credentials``, ``/products/search`` e ofertas em
+  ``/products/{id}/items``. Não usa ``/sites/MLB/search`` (403) nem HTML.
+  Seletores ficam vazios; ``url_busca`` é só referência.
 * ``tipo == "amazon"`` — estratégia dedicada (:mod:`scraper_amazon`): packs de 6
   latas, preço por lata (+ frete quando visível); seletores ficam vazios.
 * ``tipo == "shopee"`` — API oficial de afiliados da Shopee (:mod:`scraper_shopee`):
@@ -77,6 +79,17 @@ SITES_CONFIG: dict[str, SiteListingStrategy] = {
     "shopee": {
         "tipo": "shopee",
         "url_busca": "https://shopee.com.br/search?keyword={query}",
+        "card_selector": "",
+        "name_selector": "",
+        "price_selector": "",
+    },
+    "mercado_livre": {
+        "tipo": "api",
+        # Catálogo MLB; ``{query}`` recebe o termo Monster 473 ml.
+        "url_busca": (
+            "https://api.mercadolibre.com/products/search"
+            "?site_id=MLB&status=active&q={query}"
+        ),
         "card_selector": "",
         "name_selector": "",
         "price_selector": "",

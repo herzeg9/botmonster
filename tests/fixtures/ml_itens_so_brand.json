@@ -1,0 +1,16 @@
+{
+  "results": [
+    {
+      "item_id": "MLB7770001",
+      "price": 19.9,
+      "seller_id": 777,
+      "condition": "new",
+      "shipping": {
+        "free_shipping": true,
+        "cost": 8.0,
+        "logistic_type": "fulfillment",
+        "mode": "me2"
+      }
+    }
+  ]
+}

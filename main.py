@@ -11,7 +11,6 @@ import urllib.parse
 from pathlib import Path
 from typing import Any, Optional
 
-import requests
 from dotenv import load_dotenv
 
 from config_sites import SITES_CONFIG
@@ -24,6 +23,10 @@ from ofertas_feed import (
     save_ofertas,
 )
 from scraper_amazon import fetch_amazon_packs
+from scraper_mercado_livre import (
+    TERMO_BUSCA_MERCADO_LIVRE,
+    fetch_mercado_livre_ofertas,
+)
 from scraper_shopee import fetch_shopee_packs
 from scraper_supermercado import SupermarketScraper
 from telegram_notifier import escape_html, send_telegram_alert
@@ -37,6 +40,7 @@ TERMO_BUSCA = "energetico monster"
 TERMO_BUSCA_AMAZON = "monster energy pack 6 latas 473ml"
 # Shopee: foco em packs de 6 latas (preço comparado por lata).
 TERMO_BUSCA_SHOPEE = "monster energy pack 6 latas"
+# Mercado Livre: catálogo MLB, só lata de 473 ml (o pack sai do título).
 
 # Ajuste se um banner de cookies/modal bloquear a grade (inspecione o botão no site).
 POPUP_CLOSE_SELECTOR = None  # ex.: 'button:has-text("Aceitar")'
@@ -46,28 +50,6 @@ SITE_TIMEOUT_S = 180
 
 # Limiar de alerta (BRL): Telegram só quando o preço **mudou** e é <= este valor.
 MONSTER_ALERT_MAX_PRICE = 8.50
-
-# User-Agent de navegador real — o WAF do ML bloqueia o UA padrão do requests/aiohttp.
-_API_UA = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-)
-
-# A API pública do Mercado Livre costuma responder 403 sem cabeçalhos de cliente real (Akamai).
-_ML_API_HEADERS = {
-    "User-Agent": _API_UA,
-    "Accept": "application/json, text/plain, */*",
-    "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-    "Referer": "https://www.mercadolivre.com.br/",
-    "Origin": "https://www.mercadolivre.com.br",
-    "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
-    "Sec-Ch-Ua-Mobile": "?0",
-    "Sec-Ch-Ua-Platform": '"Windows"',
-    "Sec-Fetch-Dest": "empty",
-    "Sec-Fetch-Mode": "cors",
-    "Sec-Fetch-Site": "cross-site",
-}
-
 
 def _read_telegram_from_environ() -> tuple[str, str]:
     """Lê token e chat só de ``os.environ`` (sem tocar no ``.env``)."""
@@ -296,58 +278,14 @@ async def _registrar_preco_monster(
     historico[chave] = preco_atual
 
 
-def _parse_mercado_livre_search_payload(data: Any) -> list[dict[str, Any]]:
-    """Normaliza o JSON de ``/sites/MLB/search`` na lista ``produto`` / ``preco``."""
-    itens: list[dict[str, Any]] = []
-    if not isinstance(data, dict):
-        return itens
-    raw_results = data.get("results")
-    if not isinstance(raw_results, list):
-        return itens
-    for row in raw_results:
-        if not isinstance(row, dict):
-            continue
-        title = row.get("title")
-        price = row.get("price")
-        if title is None or price is None:
-            continue
-        nome = str(title).strip()
-        if not nome:
-            continue
-        try:
-            preco_float = float(price)
-        except (TypeError, ValueError):
-            continue
-        itens.append({"produto": nome, "preco": preco_float})
-    return itens
-
-
-def _ml_search_http_get_json(url: str) -> Any:
-    """GET síncrono para a Search API (executado em thread pelo asyncio)."""
-    r = requests.get(url, headers=_ML_API_HEADERS, timeout=60)
-    r.raise_for_status()
-    return r.json()
-
-
-async def fetch_search_results_api(url: str) -> list[dict[str, Any]]:
-    """Busca listagem via API REST (ex.: Mercado Livre Search).
-
-    Usa ``requests`` em ``asyncio.to_thread`` porque a CDN do ML muitas vezes devolve
-    **403** para clientes ``aiohttp`` com os mesmos cabeçalhos.
-
-    Espera JSON com ``results`` (itens com ``title`` e ``price``), retornando
-    ``[{'produto': str, 'preco': float}, ...]``.
-    """
-    data = await asyncio.to_thread(_ml_search_http_get_json, url)
-    return _parse_mercado_livre_search_payload(data)
-
-
 async def main(
     historico: dict,
     arquivo_historico: str,
     arquivo_ofertas: str = "ofertas.json",
 ) -> None:
     """Varre cada site em ``SITES_CONFIG`` e persiste preços e o feed do app."""
+    # Não sobrescreve variáveis já exportadas (CI). Preenche o que estiver no .env.
+    load_dotenv(_ENV_PATH, override=False)
     telegram_token, telegram_chat_id = load_telegram_credentials()
     # Snapshot antes dos alertas: ``preco_lata_anterior`` é o preço da rodada
     # anterior, mesmo quando o envio falha e o histórico não é atualizado.
@@ -401,16 +339,31 @@ async def main(
                     continue
 
             elif config["tipo"] == "api":
+                if site_id != "mercado_livre":
+                    logging.warning("Tipo api sem cliente para site=%r — pulando.", site_id)
+                    continue
                 url_alvo = config["url_busca"].format(
-                    query=urllib.parse.quote(TERMO_BUSCA, safe=""),
+                    query=urllib.parse.quote(TERMO_BUSCA_MERCADO_LIVRE, safe=""),
                 )
                 try:
-                    itens = await fetch_search_results_api(url_alvo)
+                    itens = await asyncio.wait_for(
+                        asyncio.to_thread(
+                            fetch_mercado_livre_ofertas,
+                            TERMO_BUSCA_MERCADO_LIVRE,
+                        ),
+                        SITE_TIMEOUT_S,
+                    )
+                except asyncio.TimeoutError:
+                    logging.error(
+                        "Timeout rígido de %ss — site=%r pulado",
+                        SITE_TIMEOUT_S,
+                        site_id,
+                    )
+                    continue
                 except Exception:
                     logging.exception(
-                        "Falha ao extrair listagem API — site=%r url=%r",
+                        "Falha ao consultar Mercado Livre — site=%r",
                         site_id,
-                        url_alvo,
                     )
                     continue
 
