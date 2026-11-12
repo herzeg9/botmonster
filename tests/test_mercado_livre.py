@@ -13,6 +13,7 @@ REPO = Path(__file__).resolve().parents[1]
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
+import main as monitor  # noqa: E402
 from config_sites import SITES_CONFIG  # noqa: E402
 from ofertas_feed import (  # noqa: E402
     build_ofertas,
@@ -26,7 +27,6 @@ from scraper_mercado_livre import (  # noqa: E402
     calcular_preco_lata,
     extrair_frete,
     fetch_mercado_livre_ofertas,
-    listar_produtos_elegiveis,
     melhor_oferta,
     montar_ofertas,
     parse_pack_qtd,
@@ -129,6 +129,13 @@ class MercadoLivreParsingTest(unittest.TestCase):
         assert obs is not None
         self.assertIsNone(obs["frete"])
         self.assertEqual(obs["preco_lata"], 18.0)
+        # A marca Monster está só no atributo BRAND. O monitor exige a palavra
+        # no campo ``produto``; sem ela a oferta some e a vaga do teto se perde.
+        self.assertIn("monster", sem_frete["produto"].lower())
+        self.assertIn("monster", sem_frete["titulo"].lower())
+        self.assertTrue(monitor._produto_elegivel(sem_frete["produto"]))
+        self.assertTrue(sem_frete["produto"].startswith("Monster Energético Lata "))
+        self.assertFalse(ofertas[0]["produto"].lower().startswith("monster monster"))
 
     def test_pack_qtd_vem_do_titulo_ou_vale_1(self) -> None:
         for caso in _json("ml_packs.json"):
@@ -186,33 +193,84 @@ class MercadoLivreParsingTest(unittest.TestCase):
                     caso["preco_lata"],
                 )
 
-    def test_teto_de_20_produtos(self) -> None:
+    def test_teto_conta_so_oferta_publicada(self) -> None:
         produtos = [
-            {
-                "id": f"MLB{i:05d}",
-                "name": "Monster Energy 473ml",
-                "domain_id": "MLB-ENERGY_DRINKS",
-                "status": "active",
-            }
-            for i in range(1, 26)
-        ]
-        produtos.insert(
-            0,
             {
                 "id": "MLB00000",
                 "name": "Monster Energy 250ml",
                 "domain_id": "MLB-ENERGY_DRINKS",
                 "status": "active",
-            },
-        )
-        produtos.append(dict(produtos[1]))
-        elegiveis = listar_produtos_elegiveis(produtos)
-        self.assertEqual(len(elegiveis), MAX_PRODUTOS)
-        self.assertEqual(elegiveis[0]["id"], "MLB00001")
-        self.assertEqual(elegiveis[-1]["id"], "MLB00020")
-        ids = {p["id"] for p in elegiveis}
+            }
+        ]
+        itens: dict = {}
+        for i in range(1, 6):
+            pid = f"MLB{i:05d}"
+            produtos.append(
+                {
+                    "id": pid,
+                    "name": "Monster Energy 473ml",
+                    "domain_id": "MLB-ENERGY_DRINKS",
+                    "status": "active",
+                }
+            )
+            itens[pid] = []
+        for i in range(6, 28):
+            pid = f"MLB{i:05d}"
+            produtos.append(
+                {
+                    "id": pid,
+                    "name": "Monster Energy 473ml",
+                    "domain_id": "MLB-ENERGY_DRINKS",
+                    "status": "active",
+                }
+            )
+            itens[pid] = [
+                {
+                    "item_id": f"ITEM{i}",
+                    "price": 10.0,
+                    "shipping": {"free_shipping": True},
+                }
+            ]
+        ofertas = montar_ofertas(produtos, itens)
+        self.assertEqual(len(ofertas), MAX_PRODUTOS)
+        self.assertEqual(ofertas[0]["catalog_id"], "MLB00006")
+        self.assertEqual(ofertas[-1]["catalog_id"], "MLB00025")
+        ids = {o["catalog_id"] for o in ofertas}
         self.assertNotIn("MLB00000", ids)
-        self.assertNotIn("MLB00021", ids)
+        self.assertNotIn("MLB00001", ids)
+        self.assertNotIn("MLB00026", ids)
+
+    def test_so_brand_chega_ao_feed(self) -> None:
+        produto = _json("ml_produto_so_brand.json")
+        itens = _json("ml_itens_so_brand.json")["results"]
+        self.assertNotIn("monster", produto["name"].lower())
+        oferta = melhor_oferta(produto, itens)
+        self.assertIsNotNone(oferta)
+        assert oferta is not None
+        self.assertTrue(oferta["produto"].startswith("Monster "))
+        self.assertTrue(oferta["titulo"].startswith("Monster "))
+        self.assertTrue(monitor._produto_elegivel(oferta["produto"]))
+        obs = observacao_from_item("mercado_livre", oferta, preco_anterior=None)
+        self.assertIsNotNone(obs)
+        assert obs is not None
+        self.assertEqual(obs["sabor"], "Ultra Peachy Keen")
+        feed = build_ofertas(
+            [obs],
+            previous=None,
+            sites_ok={"mercado_livre"},
+            generated_at=QUANDO,
+        )
+        self.assertEqual(validar_ofertas(feed), [])
+        self.assertEqual(len(feed["ofertas"]), 1)
+        publicada = feed["ofertas"][0]
+        self.assertEqual(publicada["loja"], "mercado_livre")
+        self.assertEqual(publicada["sabor"], "Ultra Peachy Keen")
+        self.assertIn("Monster", publicada["nome"])
+        self.assertEqual(publicada["preco_lata"], 19.9)
+        self.assertEqual(publicada["frete"], 0.0)
+        self.assertEqual(feed["historico"][0]["loja"], "mercado_livre")
+        self.assertEqual(feed["historico"][0]["sabor"], "Ultra Peachy Keen")
+        self.assertEqual(feed["historico"][0]["id"], publicada["id"])
 
     def test_feed_v1_aceita_a_loja_e_o_historico_plano(self) -> None:
         green = _ofertas_da_busca()[0]

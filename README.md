@@ -38,8 +38,9 @@ Entra no `ofertas.json` no mesmo formato das outras lojas (`loja` =
   0. Se `shipping.cost` não vier, o frete fica `null` (desconhecido) e a conta
   usa só o `price`;
 - uma oferta por produto de catálogo: a de menor preço por lata;
-- no máximo 20 produtos por execução (a busca pede uma página de até 50 e só
-  os 20 primeiros elegíveis geram chamada de oferta);
+- no máximo 20 ofertas publicadas por execução. A busca lê uma página de até
+  50; produto sem anúncio não ocupa vaga, e o nome ganha o prefixo ``Monster``
+  quando a marca só veio no atributo;
 - link `https://www.mercadolivre.com.br/p/{catalog_product_id}`, ou o
   `permalink` do item quando a API manda;
 - imagem, se o produto trouxer `pictures`.

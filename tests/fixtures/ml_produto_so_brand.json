@@ -1,0 +1,21 @@
+{
+  "id": "MLB100777",
+  "status": "active",
+  "domain_id": "MLB-ENERGY_DRINKS",
+  "name": "Energético Ultra Peachy Keen Lata 473ml",
+  "attributes": [
+    {"id": "BRAND", "name": "Marca", "value_name": "Monster"},
+    {
+      "id": "UNIT_VOLUME",
+      "name": "Volume da unidade",
+      "value_name": "473 mL",
+      "value_struct": {"number": 473, "unit": "mL"}
+    }
+  ],
+  "pictures": [
+    {
+      "id": "pic-peachy",
+      "url": "https://http2.mlstatic.com/D_NQ_NP_peachy.jpg"
+    }
+  ]
+}

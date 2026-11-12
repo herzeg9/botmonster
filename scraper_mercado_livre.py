@@ -11,7 +11,8 @@ verificação anti-bot. Esta loja usa só a API oficial:
 
 Sem ``ML_CLIENT_ID`` / ``ML_CLIENT_SECRET``, ou se a API recusar, loga e
 devolve ``[]`` (o monitor segue com as outras lojas). No máximo
-:data:`MAX_PRODUTOS` produtos por execução, por causa do rate limit.
+:data:`MAX_PRODUTOS` ofertas publicadas por execução. Produto sem anúncio
+não ocupa essa vaga. A busca lê uma página de até :data:`SEARCH_LIMIT`.
 """
 
 from __future__ import annotations
@@ -124,6 +125,21 @@ def _volumes_atributos(produto: dict[str, Any]) -> set[int]:
                     pass
         achados |= _volumes_texto(str(attr.get("value_name") or ""))
     return achados
+
+
+def _com_monster(texto: str) -> str:
+    """Garante a palavra Monster no rótulo que o monitor filtra.
+
+    A marca às vezes só vem no atributo ``BRAND``. Sem isso, ``main`` descarta
+    a oferta (e ela já ocupou uma vaga do teto de 20) porque ``produto`` não
+    contém ``monster``.
+    """
+    texto = (texto or "").strip()
+    if _MONSTER_RE.search(texto):
+        return texto
+    if not texto:
+        return "Monster"
+    return f"Monster {texto}"
 
 
 def _marca_monster(produto: dict[str, Any]) -> bool:
@@ -281,9 +297,10 @@ def melhor_oferta(
         nome = titulo_item
     if not nome:
         return None
+    nome_monitor = _com_monster(nome)
     return {
-        "produto": f"{nome} [{catalog_id}]",
-        "titulo": titulo_item or nome,
+        "produto": f"{nome_monitor} [{catalog_id}]",
+        "titulo": _com_monster(titulo_item or nome),
         "qtd": qtd,
         "preco_pack": round(price, 2),
         "frete": frete,
@@ -302,7 +319,11 @@ def listar_produtos_elegiveis(
     *,
     limite: int = MAX_PRODUTOS,
 ) -> list[dict[str, Any]]:
-    """Até ``limite`` produtos Monster 473 ml, na ordem da busca."""
+    """Até ``limite`` produtos Monster 473 ml, na ordem da busca.
+
+    Isto limita a varredura da página. A vaga de :data:`MAX_PRODUTOS` só
+    fecha em :func:`montar_ofertas` e na coleta, quando a oferta sai.
+    """
     saida: list[dict[str, Any]] = []
     vistos: set[str] = set()
     for produto in produtos or []:
@@ -324,13 +345,22 @@ def montar_ofertas(
     *,
     limite: int = MAX_PRODUTOS,
 ) -> list[dict[str, Any]]:
-    """Uma oferta (a melhor) por produto elegível. Sem rede."""
+    """Até ``limite`` ofertas. Produto sem anúncio não ocupa vaga. Sem rede."""
     ofertas: list[dict[str, Any]] = []
-    for produto in listar_produtos_elegiveis(produtos, limite=limite):
-        pid = str(produto.get("id") or "")
+    vistos: set[str] = set()
+    for produto in produtos or []:
+        if len(ofertas) >= limite:
+            break
+        if not isinstance(produto, dict) or not produto_elegivel(produto):
+            continue
+        pid = str(produto.get("id") or "").strip()
+        if not pid or pid in vistos:
+            continue
+        vistos.add(pid)
         oferta = melhor_oferta(produto, itens_por_produto.get(pid) or [])
-        if oferta:
-            ofertas.append(oferta)
+        if oferta is None:
+            continue
+        ofertas.append(oferta)
     return ofertas
 
 
@@ -500,9 +530,13 @@ def _coletar(client_id: str, client_secret: str, keyword: str) -> list[dict[str,
                 "limit": SEARCH_LIMIT,
             },
         )
-        candidatos = listar_produtos_elegiveis(_resultados(busca), limite=MAX_PRODUTOS)
+        # A página pode ter mais elegíveis do que o teto. A vaga só fecha
+        # quando a oferta entra; sem anúncio, o próximo produto segue.
+        candidatos = listar_produtos_elegiveis(_resultados(busca), limite=SEARCH_LIMIT)
         ofertas: list[dict[str, Any]] = []
         for produto in candidatos:
+            if len(ofertas) >= MAX_PRODUTOS:
+                break
             try:
                 oferta = _oferta_do_produto(session, token, produto)
             except requests.RequestException:
@@ -514,7 +548,7 @@ def _coletar(client_id: str, client_secret: str, keyword: str) -> list[dict[str,
             if oferta:
                 ofertas.append(oferta)
         logger.info(
-            "Mercado Livre: %d ofertas (teto de %d produtos).",
+            "Mercado Livre: %d ofertas publicadas (teto %d).",
             len(ofertas),
             MAX_PRODUTOS,
         )
