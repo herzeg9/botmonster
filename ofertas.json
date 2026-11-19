@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-19T04:59:30Z",
+  "generated_at": "2026-11-19T14:54:22Z",
   "ofertas": [
     {
       "id": "amazon::Bebida Energética Monster Energy, 473ml, Pack com 6 Unidades [B0BYTMYXBJ]",
@@ -15,7 +15,7 @@
       "cupom": null,
       "link": "https://www.amazon.com.br/dp/B0BYTMYXBJ",
       "imagem": "https://m.media-amazon.com/images/I/71fUxeTKG9L._AC_UL320_.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "amazon::Energético Monster Absolutely Zero, 473ml, Pack com 6 Unidades [B0BYTLY4K1]",
@@ -23,14 +23,14 @@
       "nome": "Energético Monster Absolutely Zero, 473ml, Pack com 6 Unidades",
       "sabor": "Absolutely Zero",
       "pack_qtd": 6,
-      "preco_pack": 62.33,
-      "preco_lata": 10.39,
+      "preco_pack": 65.34,
+      "preco_lata": 10.89,
       "preco_lata_anterior": 10.39,
       "frete": 0.0,
       "cupom": null,
       "link": "https://www.amazon.com.br/dp/B0BYTLY4K1",
       "imagem": "https://m.media-amazon.com/images/I/61nygMB+VTL._AC_UL320_.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "amazon::Energético Monster Khaotic, 473ml, Pack com 6 Unidades [B0CC9NGJ4X]",
@@ -40,12 +40,12 @@
       "pack_qtd": 6,
       "preco_pack": 75.04,
       "preco_lata": 12.51,
-      "preco_lata_anterior": 10.49,
+      "preco_lata_anterior": 12.51,
       "frete": 0.0,
       "cupom": null,
       "link": "https://www.amazon.com.br/dp/B0CC9NGJ4X",
       "imagem": "https://m.media-amazon.com/images/I/81WnJtbCDkL._AC_UL320_.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "amazon::Energético Monster Mango Loco, 473ml, Pack com 6 Unidades [B0BYTLPHBC]",
@@ -60,22 +60,7 @@
       "cupom": null,
       "link": "https://www.amazon.com.br/dp/B0BYTLPHBC",
       "imagem": "https://m.media-amazon.com/images/I/61zJofTCTnL._AC_UL320_.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
-    },
-    {
-      "id": "amazon::Energético Monster Ultra Peachy Keen Zero Açúcar, 6 Unidades de 473ml [B0DSGJH9L7]",
-      "loja": "amazon",
-      "nome": "Energético Monster Ultra Peachy Keen Zero Açúcar, 6 Unidades de 473ml",
-      "sabor": "Ultra Peachy Keen",
-      "pack_qtd": 6,
-      "preco_pack": 62.94,
-      "preco_lata": 10.49,
-      "preco_lata_anterior": 10.49,
-      "frete": null,
-      "cupom": null,
-      "link": "https://www.amazon.com.br/dp/B0DSGJH9L7",
-      "imagem": "https://m.media-amazon.com/images/I/51I3YX53qxL._AC_UL320_.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "amazon::Energético Monster Ultra Watermelon, 473ml, Pack com 6 Unidades [B0CQD3TY4T]",
@@ -90,7 +75,7 @@
       "cupom": null,
       "link": "https://www.amazon.com.br/dp/B0CQD3TY4T",
       "imagem": "https://m.media-amazon.com/images/I/91UlNafSFmL._AC_UL320_.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "amazon::Energético Monster Ultra, 473ml, Pack com 6 Unidades [B0CQD3CQHY]",
@@ -105,7 +90,7 @@
       "cupom": null,
       "link": "https://www.amazon.com.br/dp/B0CQD3CQHY",
       "imagem": "https://m.media-amazon.com/images/I/71yc08pWN4L._AC_UL320_.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "amazon::Monster Energy Drink Rio Punch, 473ml – Bebida Energética Tropical, Sabor Frutado e Refrescante 6 unidades [B0FRJQVF4W]",
@@ -120,7 +105,22 @@
       "cupom": null,
       "link": "https://www.amazon.com.br/dp/B0FRJQVF4W",
       "imagem": "https://m.media-amazon.com/images/I/71RlOVCZ8KL._AC_UL320_.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
+    },
+    {
+      "id": "amazon::Pack Monster Energy Mango Loco Ultra Fiesta Bebida Energética Zero Açúcar, Lata 473 ml – 6 Unidades [B0F63PQS88]",
+      "loja": "amazon",
+      "nome": "Pack Monster Energy Mango Loco Ultra Fiesta Bebida Energética Zero Açúcar, Lata 473 ml – 6 Unidades",
+      "sabor": "Mango Loco",
+      "pack_qtd": 6,
+      "preco_pack": 70.98,
+      "preco_lata": 11.83,
+      "preco_lata_anterior": 9.49,
+      "frete": 0.0,
+      "cupom": null,
+      "link": "https://www.amazon.com.br/dp/B0F63PQS88",
+      "imagem": "https://m.media-amazon.com/images/I/710CLn5QeyL._AC_UL320_.jpg",
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "amazon::Pack de Energético Monster Pacific Punch lata 473ml 6 unidades [B0BVRVP2MM]",
@@ -128,14 +128,14 @@
       "nome": "Pack de Energético Monster Pacific Punch lata 473ml 6 unidades",
       "sabor": "Pacific Punch",
       "pack_qtd": 6,
-      "preco_pack": 71.15,
-      "preco_lata": 11.86,
-      "preco_lata_anterior": 11.4,
-      "frete": null,
+      "preco_pack": 68.38,
+      "preco_lata": 11.4,
+      "preco_lata_anterior": 11.86,
+      "frete": 0.0,
       "cupom": null,
       "link": "https://www.amazon.com.br/dp/B0BVRVP2MM",
       "imagem": "https://m.media-amazon.com/images/I/6183uVOHkTL._AC_UL320_.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "amazon::Pack de Monster Ultra Violet LT 473ml - Unidade 6 unidades [B0BYTLNLFH]",
@@ -150,7 +150,7 @@
       "cupom": null,
       "link": "https://www.amazon.com.br/dp/B0BYTLNLFH",
       "imagem": "https://m.media-amazon.com/images/I/81DBI9E2xlL._AC_UL320_.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "mercado_livre::Energetico Monster Energy Fardo Com 6 Latas De 473ml Sabores Monster Energy Drink Juicy Mango Loco [MLB19605922]",
@@ -165,7 +165,7 @@
       "cupom": null,
       "link": "https://www.mercadolivre.com.br/p/MLB19605922",
       "imagem": "https://http2.mlstatic.com/D_NQ_NP_919453-MLA117383415394_102026-F.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "mercado_livre::Energetico Monster Energy Pipeline Punch 473ml Caixa Com 6 [MLB29543100]",
@@ -180,7 +180,7 @@
       "cupom": null,
       "link": "https://www.mercadolivre.com.br/p/MLB29543100",
       "imagem": "https://http2.mlstatic.com/D_NQ_NP_884095-MLU73875618741_012024-F.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "mercado_livre::Energetico Monster Energy Ultra Watermelon 473ml Kit Com 6 Latas [MLB47394343]",
@@ -195,7 +195,7 @@
       "cupom": null,
       "link": "https://www.mercadolivre.com.br/p/MLB47394343",
       "imagem": "https://http2.mlstatic.com/D_NQ_NP_775714-MLA99369345690_112025-F.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "mercado_livre::Energético Juice Monster Energy Mango Loco Lata 473ml [MLB18308430]",
@@ -210,7 +210,7 @@
       "cupom": null,
       "link": "https://www.mercadolivre.com.br/p/MLB18308430",
       "imagem": "https://http2.mlstatic.com/D_NQ_NP_830819-MLA120442644713_102026-F.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "mercado_livre::Energético Monster Energy Drink Khaotic 473ml [MLB24745977]",
@@ -225,7 +225,7 @@
       "cupom": null,
       "link": "https://www.mercadolivre.com.br/p/MLB24745977",
       "imagem": "https://http2.mlstatic.com/D_NQ_NP_656662-MLA99844925941_112025-F.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "mercado_livre::Energético Monster Energy Drink Khaotic 473ml - 4 Unidades [MLB70127032]",
@@ -240,7 +240,7 @@
       "cupom": null,
       "link": "https://www.mercadolivre.com.br/p/MLB70127032",
       "imagem": "https://http2.mlstatic.com/D_NQ_NP_971352-MLA112070916579_052026-F.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "mercado_livre::Energético Monster Energy Drink Khaotic 473ml - 6 Unidades [MLB25009181]",
@@ -255,7 +255,7 @@
       "cupom": null,
       "link": "https://www.mercadolivre.com.br/p/MLB25009181",
       "imagem": "https://http2.mlstatic.com/D_NQ_NP_644316-MLU70654756684_072023-F.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "mercado_livre::Energético Monster Energy Green 473ml [MLB60691749]",
@@ -270,7 +270,7 @@
       "cupom": null,
       "link": "https://www.mercadolivre.com.br/p/MLB60691749",
       "imagem": "https://http2.mlstatic.com/D_NQ_NP_855184-MLA99814949959_112025-F.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "mercado_livre::Energético Monster Energy Juice Pacific Punch 473ml [MLB69344815]",
@@ -285,7 +285,7 @@
       "cupom": null,
       "link": "https://www.mercadolivre.com.br/p/MLB69344815",
       "imagem": "https://http2.mlstatic.com/D_NQ_NP_987169-MLA110468599230_052026-F.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "mercado_livre::Energético Monster Energy Juice Tropical Khaotic Lata 473ml [MLB53893232]",
@@ -300,7 +300,7 @@
       "cupom": null,
       "link": "https://www.mercadolivre.com.br/p/MLB53893232",
       "imagem": "https://http2.mlstatic.com/D_NQ_NP_648717-MLA99898597509_112025-F.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "mercado_livre::Energético Monster Energy Lata De 473ml Unleash The Best [MLB21646496]",
@@ -315,7 +315,7 @@
       "cupom": null,
       "link": "https://www.mercadolivre.com.br/p/MLB21646496",
       "imagem": "https://http2.mlstatic.com/D_NQ_NP_978514-MLB74054855412_012024-F.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "mercado_livre::Energético Monster Energy Tradicional 473ml 8unid-gamer [MLB73962483]",
@@ -330,7 +330,7 @@
       "cupom": null,
       "link": "https://www.mercadolivre.com.br/p/MLB73962483",
       "imagem": "https://http2.mlstatic.com/D_NQ_NP_828774-MLA114033075032_072026-F.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "mercado_livre::Energético Monster Energy Zero Açúcar 473ml [MLB36837738]",
@@ -345,7 +345,7 @@
       "cupom": null,
       "link": "https://www.mercadolivre.com.br/p/MLB36837738",
       "imagem": "https://http2.mlstatic.com/D_NQ_NP_839824-MLA99359123536_112025-F.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "mercado_livre::Kit 06 Monster Energy Absolutely Zero Açúcar 473ml [MLB22393900]",
@@ -360,7 +360,7 @@
       "cupom": null,
       "link": "https://www.mercadolivre.com.br/p/MLB22393900",
       "imagem": "https://http2.mlstatic.com/D_NQ_NP_826561-MLA110464372408_052026-F.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "mercado_livre::Kit Energético Monster Energy Lata 473ml Tradicional 6 Unidades [MLB43871996]",
@@ -375,7 +375,7 @@
       "cupom": null,
       "link": "https://www.mercadolivre.com.br/p/MLB43871996",
       "imagem": "https://http2.mlstatic.com/D_NQ_NP_762500-MLA116390812907_082026-F.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "mercado_livre::Monster Energy Absolutely Zero Energético Lata 473ml [MLB52708310]",
@@ -390,7 +390,7 @@
       "cupom": null,
       "link": "https://www.mercadolivre.com.br/p/MLB52708310",
       "imagem": "https://http2.mlstatic.com/D_NQ_NP_733494-MLA99328653466_112025-F.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "mercado_livre::Monster Energy Ultra White Lata 473ml Qualidade Top [MLB51331927]",
@@ -405,7 +405,7 @@
       "cupom": null,
       "link": "https://www.mercadolivre.com.br/p/MLB51331927",
       "imagem": "https://http2.mlstatic.com/D_NQ_NP_757196-MLA85952247342_062025-F.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "mercado_livre::Pack 12 Latas Monster Energy Drink Juice Mango Loco 473ml [MLB21667090]",
@@ -420,7 +420,7 @@
       "cupom": null,
       "link": "https://www.mercadolivre.com.br/p/MLB21667090",
       "imagem": "https://http2.mlstatic.com/D_NQ_NP_879321-MLB48803284991_012022-F.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "mercado_livre::Pack 6 Energético Monster Energy Fiesta Mango Zero 473ml [MLB49236426]",
@@ -435,7 +435,7 @@
       "cupom": null,
       "link": "https://www.mercadolivre.com.br/p/MLB49236426",
       "imagem": "https://http2.mlstatic.com/D_NQ_NP_872474-MLA99815137783_112025-F.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "mercado_livre::Pack C/6un Energético Monster Energy Zero Açúcar 473ml [MLB37182908]",
@@ -443,14 +443,14 @@
       "nome": "Pack C/6un Energético Monster Energy Zero Açúcar 473ml",
       "sabor": "Zero Açúcar",
       "pack_qtd": 6,
-      "preco_pack": 54.48,
-      "preco_lata": 9.08,
+      "preco_pack": 55.01,
+      "preco_lata": 9.17,
       "preco_lata_anterior": 9.08,
       "frete": 0.0,
       "cupom": null,
       "link": "https://www.mercadolivre.com.br/p/MLB37182908",
       "imagem": "https://http2.mlstatic.com/D_NQ_NP_827067-MLA113216050072_072026-F.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "pao_de_acucar::Energético Diet Monster Absolutely Zero Lata 473ml",
@@ -458,14 +458,14 @@
       "nome": "Energético Diet Monster Absolutely Zero Lata 473ml",
       "sabor": "Absolutely Zero",
       "pack_qtd": 1,
-      "preco_pack": 9.49,
-      "preco_lata": 9.49,
+      "preco_pack": 10.99,
+      "preco_lata": 10.99,
       "preco_lata_anterior": 9.49,
       "frete": null,
       "cupom": null,
       "link": "https://www.paodeacucar.com/produto/451838/energetico-diet-monster-absolutely-zero-lata-473ml",
       "imagem": "https://static.paodeacucar.com/img/uploads/1/43/33043043.png?im=Resize,width=200",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "pao_de_acucar::Energético Juice Creme de Papaya Monster Rio Punch Lata 473ml",
@@ -473,14 +473,14 @@
       "nome": "Energético Juice Creme de Papaya Monster Rio Punch Lata 473ml",
       "sabor": "Rio Punch",
       "pack_qtd": 1,
-      "preco_pack": 9.49,
-      "preco_lata": 9.49,
+      "preco_pack": 10.99,
+      "preco_lata": 10.99,
       "preco_lata_anterior": 9.49,
       "frete": null,
       "cupom": null,
       "link": "https://www.paodeacucar.com/produto/1638684/energetico-juice-creme-de-papaya-monster-rio-punch-lata-473ml",
       "imagem": "https://static.paodeacucar.com/img/uploads/1/517/33057517.png?im=Resize,width=200",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "pao_de_acucar::Energético Juice Monster Mango Loco Lata 473ml",
@@ -495,7 +495,7 @@
       "cupom": null,
       "link": "https://www.paodeacucar.com/produto/452790/energetico-juice-monster-mango-loco-lata-473ml",
       "imagem": "https://static.paodeacucar.com/img/uploads/1/846/33042846.png?im=Resize,width=200",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "pao_de_acucar::Energético Juice Monster Pipeline Punch Lata 473ml",
@@ -503,14 +503,14 @@
       "nome": "Energético Juice Monster Pipeline Punch Lata 473ml",
       "sabor": "Pipeline Punch",
       "pack_qtd": 1,
-      "preco_pack": 9.49,
-      "preco_lata": 9.49,
+      "preco_pack": 10.99,
+      "preco_lata": 10.99,
       "preco_lata_anterior": 9.49,
       "frete": null,
       "cupom": null,
       "link": "https://www.paodeacucar.com/produto/1614937/energetico-juice-monster-pipeline-punch-lata-473ml",
       "imagem": "https://static.paodeacucar.com/img/uploads/1/664/32953664.png?im=Resize,width=200",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "pao_de_acucar::Energético Juice Tropical Orange Monster Khaotic Lata 473ml",
@@ -518,14 +518,14 @@
       "nome": "Energético Juice Tropical Orange Monster Khaotic Lata 473ml",
       "sabor": "Khaotic",
       "pack_qtd": 1,
-      "preco_pack": 9.49,
-      "preco_lata": 9.49,
+      "preco_pack": 10.99,
+      "preco_lata": 10.99,
       "preco_lata_anterior": 9.49,
       "frete": null,
       "cupom": null,
       "link": "https://www.paodeacucar.com/produto/1599366/energetico-juice-tropical-orange-monster-khaotic-lata-473ml",
       "imagem": "https://static.paodeacucar.com/img/uploads/1/732/32885732.png?im=Resize,width=200",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "pao_de_acucar::Energético Monster Energy Ultra Violet Sem Açúcar 473ml",
@@ -540,7 +540,7 @@
       "cupom": null,
       "link": "https://www.paodeacucar.com/produto/453213/energetico-monster-energy-ultra-violet-sem-acucar-473ml",
       "imagem": "https://static.paodeacucar.com/img/uploads/1/858/33044858.png?im=Resize,width=200",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "pao_de_acucar::Energético Monster Lata 473ml",
@@ -555,7 +555,7 @@
       "cupom": null,
       "link": "https://www.paodeacucar.com/produto/11178/energetico-monster-lata-473ml",
       "imagem": "https://static.paodeacucar.com/img/uploads/1/780/33062780.jpeg?im=Resize,width=200",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "pao_de_acucar::Energético Monster Ultra Lata 473ml",
@@ -570,7 +570,7 @@
       "cupom": null,
       "link": "https://www.paodeacucar.com/produto/353253/energetico-monster-ultra-lata-473ml",
       "imagem": "https://static.paodeacucar.com/img/uploads/1/950/33037950.png?im=Resize,width=200",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "pao_de_acucar::Energético Ultra Fiesta Mango Zero Açúcar Monster Lata 473ml",
@@ -578,14 +578,14 @@
       "nome": "Energético Ultra Fiesta Mango Zero Açúcar Monster Lata 473ml",
       "sabor": "Ultra Fiesta Mango",
       "pack_qtd": 1,
-      "preco_pack": 9.49,
-      "preco_lata": 9.49,
+      "preco_pack": 10.99,
+      "preco_lata": 10.99,
       "preco_lata_anterior": 9.49,
       "frete": null,
       "cupom": null,
       "link": "https://www.paodeacucar.com/produto/1633818/energetico-ultra-fiesta-mango-zero-acucar-monster-lata-473ml",
       "imagem": "https://static.paodeacucar.com/img/uploads/1/105/33057105.png?im=Resize,width=200",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "pao_de_acucar::Energético Ultra Peachy Keen Zero Açúcar Monster Lata 473ml",
@@ -595,12 +595,12 @@
       "pack_qtd": 1,
       "preco_pack": 10.99,
       "preco_lata": 10.99,
-      "preco_lata_anterior": 9.49,
+      "preco_lata_anterior": 10.99,
       "frete": null,
       "cupom": null,
       "link": "https://www.paodeacucar.com/produto/1627856/energetico-ultra-peachy-keen-zero-acucar-monster-lata-473ml",
       "imagem": "https://static.paodeacucar.com/img/uploads/1/94/33057094.png?im=Resize,width=200",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "pao_de_acucar::Energético Ultra Strawberry Dreams Zero Açúcar Monster Lata 473ml",
@@ -615,7 +615,7 @@
       "cupom": null,
       "link": "https://www.paodeacucar.com/produto/1644569/energetico-ultra-strawberry-dreams-zero-acucar-monster-lata-473ml",
       "imagem": "https://static.paodeacucar.com/img/uploads/1/539/33005539.png?im=Resize,width=200",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "pao_de_acucar::Energético Ultra Watermelon Zero Açúcar Monster Lata 473ml",
@@ -623,14 +623,14 @@
       "nome": "Energético Ultra Watermelon Zero Açúcar Monster Lata 473ml",
       "sabor": "Ultra Watermelon",
       "pack_qtd": 1,
-      "preco_pack": 9.49,
-      "preco_lata": 9.49,
+      "preco_pack": 10.99,
+      "preco_lata": 10.99,
       "preco_lata_anterior": 9.49,
       "frete": null,
       "cupom": null,
       "link": "https://www.paodeacucar.com/produto/1564962/energetico-ultra-watermelon-zero-acucar-monster-lata-473ml",
       "imagem": "https://static.paodeacucar.com/img/uploads/1/672/33054672.png?im=Resize,width=200",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "pao_de_acucar::Energético Zero Açúcar Monster Lata 473ml",
@@ -645,7 +645,7 @@
       "cupom": null,
       "link": "https://www.paodeacucar.com/produto/1623422/energetico-zero-acucar-monster-lata-473ml",
       "imagem": "https://static.paodeacucar.com/img/uploads/1/735/33055735.png?im=Resize,width=200",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "sams_club::Energético Diet Monster Absolutely Zero Lata 473ml",
@@ -660,7 +660,7 @@
       "cupom": null,
       "link": "https://www.samsclub.com.br/energetico-diet-monster-absolutely-zero-lata-473ml-70847022305/p",
       "imagem": "https://samsclub.vtexassets.com/arquivos/ids/156794-163-163?v=637430326114400000&width=163&height=163&aspect=true",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "sams_club::Energético Juice Monster Mango Loco Lata 473ml",
@@ -675,7 +675,7 @@
       "cupom": null,
       "link": "https://www.samsclub.com.br/energetico-juice-monster-mango-loco-lata-473ml-70847033301/p",
       "imagem": "https://samsclub.vtexassets.com/arquivos/ids/156795-163-163?v=637430326124570000&width=163&height=163&aspect=true",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "sams_club::Energético Monster Lata 473ml",
@@ -690,7 +690,7 @@
       "cupom": null,
       "link": "https://www.samsclub.com.br/energetico-monster-lata-473ml-7898938890014/p",
       "imagem": "https://samsclub.vtexassets.com/arquivos/ids/156879-163-163?v=637430326599770000&width=163&height=163&aspect=true",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "sams_club::Energético Monster Ultra Violet Zero Açúcar Lata 473ml",
@@ -705,7 +705,7 @@
       "cupom": null,
       "link": "https://www.samsclub.com.br/energetico-monster-ultra-violet-zero-acucar-lata-473ml-70847033936/p",
       "imagem": "https://samsclub.vtexassets.com/arquivos/ids/160567-163-163?v=637469447107370000&width=163&height=163&aspect=true",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "sams_club::Energético Ultra Monster Energy Lata 473ml",
@@ -720,7 +720,7 @@
       "cupom": null,
       "link": "https://www.samsclub.com.br/energetico-ultra-monster-energy-lata-473ml--70847022206/p",
       "imagem": "https://samsclub.vtexassets.com/arquivos/ids/166399-163-163?v=637656133924630000&width=163&height=163&aspect=true",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "tauste::Energético Monster Absolutely Zero Lata 473ml",
@@ -734,8 +734,8 @@
       "frete": null,
       "cupom": null,
       "link": "https://tauste.com.br/campinas1/136249-energetico-monster-absolutely-zero-lata-473ml.html",
-      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/3/1362491794193850.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/3/1362491795093529.jpg",
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "tauste::Energético Monster Energy Lata 473ml",
@@ -749,8 +749,8 @@
       "frete": null,
       "cupom": null,
       "link": "https://tauste.com.br/campinas1/121120-energetico-monster-energy-drink-lata-473ml.html",
-      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/2/1211201794193826.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/2/1211201795093502.jpg",
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "tauste::Energético Monster Energy Ultra Peachy Keen sem Açúcar Lata 473ml",
@@ -764,8 +764,8 @@
       "frete": null,
       "cupom": null,
       "link": "https://tauste.com.br/campinas1/170637-energetico-monster-energy-ultra-peachy-keen-sem-acucar-lata-473ml.html",
-      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/7/1706371794194267.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/7/1706371795093603.jpg",
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "tauste::Energético Monster Energy Ultra Watermelon Lata 473ml",
@@ -779,8 +779,8 @@
       "frete": null,
       "cupom": null,
       "link": "https://tauste.com.br/campinas1/159981-energetico-monster-energy-ultra-watermelon-lata-473ml.html",
-      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/5/1599811794194096.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/5/1599811795093553.jpg",
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "tauste::Energético Monster Energy sem Açúcar Lata 473ml",
@@ -794,8 +794,8 @@
       "frete": null,
       "cupom": null,
       "link": "https://tauste.com.br/campinas1/166017-energetico-monster-energy-sem-acucar-lata-473ml.html",
-      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/6/1660171794194188.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/6/1660171795093594.jpg",
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "tauste::Energético Monster Juice Pacific Punch Lata 473ml",
@@ -809,8 +809,8 @@
       "frete": null,
       "cupom": null,
       "link": "https://tauste.com.br/campinas1/152146-energetico-monster-juice-pacific-punch-lata-473ml.html",
-      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/5/1521461794193866.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/5/1521461795093545.jpg",
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "tauste::Energético Monster Khaotic Tropical Orange Lata 473ml",
@@ -824,8 +824,8 @@
       "frete": null,
       "cupom": null,
       "link": "https://tauste.com.br/campinas1/161651-energetico-monster-khaotic-tropical-orange-lata-473ml.html",
-      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/6/1616511794194105.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/6/1616511795093562.jpg",
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "tauste::Energético Monster Mango Loco Lata 473ml",
@@ -839,8 +839,8 @@
       "frete": null,
       "cupom": null,
       "link": "https://tauste.com.br/campinas1/136248-energetico-monster-mango-loco-lata-473ml.html",
-      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/3/1362481794193842.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/3/1362481795093521.jpg",
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "tauste::Energético Monster Pipeline Punch Lata 473ml",
@@ -854,8 +854,8 @@
       "frete": null,
       "cupom": null,
       "link": "https://tauste.com.br/campinas1/164320-energetico-monster-pipeline-punch-lata-473ml.html",
-      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/6/1643201794194155.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/6/1643201795093587.jpg",
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "tauste::Energético Monster Rio Punch Lata 473ml",
@@ -869,8 +869,8 @@
       "frete": null,
       "cupom": null,
       "link": "https://tauste.com.br/campinas1/176212-energetico-monster-rio-punch-lata-473ml.html",
-      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/7/1762121794194304.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/7/1762121795093634.jpg",
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "tauste::Energético Monster Ultra Fiesta Mango sem Açúcar Lata 473ml",
@@ -884,8 +884,8 @@
       "frete": null,
       "cupom": null,
       "link": "https://tauste.com.br/campinas1/173682-energetico-monster-ultra-fiesta-mango-sem-acucar-lata-473ml.html",
-      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/7/1736821794194295.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/7/1736821795093626.jpg",
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "tauste::Energético Monster Ultra Lata 473ml",
@@ -899,8 +899,8 @@
       "frete": null,
       "cupom": null,
       "link": "https://tauste.com.br/campinas1/121122-energetico-monster-ultra-lata-473ml.html",
-      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/2/1211221794193834.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/2/1211221795093512.jpg",
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "tauste::Energético Monster Ultra Strawberry Dreams sem Açúcar Lata 473ml",
@@ -908,14 +908,14 @@
       "nome": "Energético Monster Ultra Strawberry Dreams sem Açúcar Lata 473ml",
       "sabor": "Ultra Strawberry Dreams",
       "pack_qtd": 1,
-      "preco_pack": 9.99,
-      "preco_lata": 9.99,
+      "preco_pack": 10.18,
+      "preco_lata": 10.18,
       "preco_lata_anterior": 9.99,
       "frete": null,
       "cupom": null,
       "link": "https://tauste.com.br/campinas1/178846-energetico-monster-ultra-strawberry-dreams-sem-acucar-lata-473ml.html",
-      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/7/1788461794194337.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/7/1788461795093659.jpg",
+      "visto_em": "2026-11-19T14:54:22Z"
     },
     {
       "id": "tauste::Energético Monster Ultra Violeta Lata 473ml",
@@ -929,8 +929,8 @@
       "frete": null,
       "cupom": null,
       "link": "https://tauste.com.br/campinas1/138656-energetico-monster-ultra-violeta-lata-473ml.html",
-      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/3/1386561794193858.jpg",
-      "visto_em": "2026-11-19T04:59:30Z"
+      "imagem": "https://tauste.com.br/media/catalog/product/cache/2765542505660baab28ecd555e27366e/1/3/1386561795093538.jpg",
+      "visto_em": "2026-11-19T14:54:22Z"
     }
   ],
   "historico": [
@@ -1049,6 +1049,15 @@
       "pack_qtd": 6,
       "preco_lata": 10.39,
       "visto_em": "2026-11-18T22:46:45Z",
+      "id": "amazon::Energético Monster Absolutely Zero, 473ml, Pack com 6 Unidades [B0BYTLY4K1]"
+    },
+    {
+      "loja": "amazon",
+      "sabor": "Absolutely Zero",
+      "nome": "Energético Monster Absolutely Zero, 473ml, Pack com 6 Unidades",
+      "pack_qtd": 6,
+      "preco_lata": 10.89,
+      "visto_em": "2026-11-19T14:54:22Z",
       "id": "amazon::Energético Monster Absolutely Zero, 473ml, Pack com 6 Unidades [B0BYTLY4K1]"
     },
     {
@@ -1359,6 +1368,15 @@
     },
     {
       "loja": "amazon",
+      "sabor": "Mango Loco",
+      "nome": "Pack Monster Energy Mango Loco Ultra Fiesta Bebida Energética Zero Açúcar, Lata 473 ml – 6 Unidades",
+      "pack_qtd": 6,
+      "preco_lata": 11.83,
+      "visto_em": "2026-11-19T14:54:22Z",
+      "id": "amazon::Pack Monster Energy Mango Loco Ultra Fiesta Bebida Energética Zero Açúcar, Lata 473 ml – 6 Unidades [B0F63PQS88]"
+    },
+    {
+      "loja": "amazon",
       "sabor": "Pacific Punch",
       "nome": "Pack de Energético Monster Pacific Punch lata 473ml 6 unidades",
       "pack_qtd": 6,
@@ -1418,6 +1436,15 @@
       "pack_qtd": 6,
       "preco_lata": 11.86,
       "visto_em": "2026-11-19T04:59:30Z",
+      "id": "amazon::Pack de Energético Monster Pacific Punch lata 473ml 6 unidades [B0BVRVP2MM]"
+    },
+    {
+      "loja": "amazon",
+      "sabor": "Pacific Punch",
+      "nome": "Pack de Energético Monster Pacific Punch lata 473ml 6 unidades",
+      "pack_qtd": 6,
+      "preco_lata": 11.4,
+      "visto_em": "2026-11-19T14:54:22Z",
       "id": "amazon::Pack de Energético Monster Pacific Punch lata 473ml 6 unidades [B0BVRVP2MM]"
     },
     {
@@ -1826,6 +1853,15 @@
       "id": "mercado_livre::Pack C/6un Energético Monster Energy Zero Açúcar 473ml [MLB37182908]"
     },
     {
+      "loja": "mercado_livre",
+      "sabor": "Zero Açúcar",
+      "nome": "Pack C/6un Energético Monster Energy Zero Açúcar 473ml",
+      "pack_qtd": 6,
+      "preco_lata": 9.17,
+      "visto_em": "2026-11-19T14:54:22Z",
+      "id": "mercado_livre::Pack C/6un Energético Monster Energy Zero Açúcar 473ml [MLB37182908]"
+    },
+    {
       "loja": "pao_de_acucar",
       "sabor": "Absolutely Zero",
       "nome": "Energético Diet Monster Absolutely Zero Lata 473ml",
@@ -1841,6 +1877,15 @@
       "pack_qtd": 1,
       "preco_lata": 9.49,
       "visto_em": "2026-11-15T08:37:50Z",
+      "id": "pao_de_acucar::Energético Diet Monster Absolutely Zero Lata 473ml"
+    },
+    {
+      "loja": "pao_de_acucar",
+      "sabor": "Absolutely Zero",
+      "nome": "Energético Diet Monster Absolutely Zero Lata 473ml",
+      "pack_qtd": 1,
+      "preco_lata": 10.99,
+      "visto_em": "2026-11-19T14:54:22Z",
       "id": "pao_de_acucar::Energético Diet Monster Absolutely Zero Lata 473ml"
     },
     {
@@ -1877,6 +1922,15 @@
       "pack_qtd": 1,
       "preco_lata": 9.49,
       "visto_em": "2026-11-17T15:09:26Z",
+      "id": "pao_de_acucar::Energético Juice Creme de Papaya Monster Rio Punch Lata 473ml"
+    },
+    {
+      "loja": "pao_de_acucar",
+      "sabor": "Rio Punch",
+      "nome": "Energético Juice Creme de Papaya Monster Rio Punch Lata 473ml",
+      "pack_qtd": 1,
+      "preco_lata": 10.99,
+      "visto_em": "2026-11-19T14:54:22Z",
       "id": "pao_de_acucar::Energético Juice Creme de Papaya Monster Rio Punch Lata 473ml"
     },
     {
@@ -1935,6 +1989,15 @@
     },
     {
       "loja": "pao_de_acucar",
+      "sabor": "Pipeline Punch",
+      "nome": "Energético Juice Monster Pipeline Punch Lata 473ml",
+      "pack_qtd": 1,
+      "preco_lata": 10.99,
+      "visto_em": "2026-11-19T14:54:22Z",
+      "id": "pao_de_acucar::Energético Juice Monster Pipeline Punch Lata 473ml"
+    },
+    {
+      "loja": "pao_de_acucar",
       "sabor": "Khaotic",
       "nome": "Energético Juice Tropical Orange Monster Khaotic Lata 473ml",
       "pack_qtd": 1,
@@ -1949,6 +2012,15 @@
       "pack_qtd": 1,
       "preco_lata": 9.49,
       "visto_em": "2026-11-15T08:37:50Z",
+      "id": "pao_de_acucar::Energético Juice Tropical Orange Monster Khaotic Lata 473ml"
+    },
+    {
+      "loja": "pao_de_acucar",
+      "sabor": "Khaotic",
+      "nome": "Energético Juice Tropical Orange Monster Khaotic Lata 473ml",
+      "pack_qtd": 1,
+      "preco_lata": 10.99,
+      "visto_em": "2026-11-19T14:54:22Z",
       "id": "pao_de_acucar::Energético Juice Tropical Orange Monster Khaotic Lata 473ml"
     },
     {
@@ -1994,6 +2066,15 @@
       "pack_qtd": 1,
       "preco_lata": 9.49,
       "visto_em": "2026-11-15T08:37:50Z",
+      "id": "pao_de_acucar::Energético Ultra Fiesta Mango Zero Açúcar Monster Lata 473ml"
+    },
+    {
+      "loja": "pao_de_acucar",
+      "sabor": "Ultra Fiesta Mango",
+      "nome": "Energético Ultra Fiesta Mango Zero Açúcar Monster Lata 473ml",
+      "pack_qtd": 1,
+      "preco_lata": 10.99,
+      "visto_em": "2026-11-19T14:54:22Z",
       "id": "pao_de_acucar::Energético Ultra Fiesta Mango Zero Açúcar Monster Lata 473ml"
     },
     {
@@ -2084,6 +2165,15 @@
       "pack_qtd": 1,
       "preco_lata": 9.49,
       "visto_em": "2026-11-17T15:09:26Z",
+      "id": "pao_de_acucar::Energético Ultra Watermelon Zero Açúcar Monster Lata 473ml"
+    },
+    {
+      "loja": "pao_de_acucar",
+      "sabor": "Ultra Watermelon",
+      "nome": "Energético Ultra Watermelon Zero Açúcar Monster Lata 473ml",
+      "pack_qtd": 1,
+      "preco_lata": 10.99,
+      "visto_em": "2026-11-19T14:54:22Z",
       "id": "pao_de_acucar::Energético Ultra Watermelon Zero Açúcar Monster Lata 473ml"
     },
     {
@@ -2399,6 +2489,15 @@
       "pack_qtd": 1,
       "preco_lata": 9.99,
       "visto_em": "2026-11-18T14:47:32Z",
+      "id": "tauste::Energético Monster Ultra Strawberry Dreams sem Açúcar Lata 473ml"
+    },
+    {
+      "loja": "tauste",
+      "sabor": "Ultra Strawberry Dreams",
+      "nome": "Energético Monster Ultra Strawberry Dreams sem Açúcar Lata 473ml",
+      "pack_qtd": 1,
+      "preco_lata": 10.18,
+      "visto_em": "2026-11-19T14:54:22Z",
       "id": "tauste::Energético Monster Ultra Strawberry Dreams sem Açúcar Lata 473ml"
     },
     {
